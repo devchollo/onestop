@@ -111,6 +111,7 @@
         </div>
         <div class="rows" id="rows" aria-label="Upload list">
           <!-- dynamic rows go here -->
+           <div id="linkOutput"></div>
         </div>
       </section>
 
@@ -149,7 +150,7 @@
     </div>
   </dialog>
 
-  <script>
+  <script defer>
     // ---------------------------
     // Configuration
     // ---------------------------
@@ -163,34 +164,123 @@
     // ---- Supabase Upload Configuration ----
     
 
-const SUPABASE_URL = "https://upobogmnueehnofihsvz.supabase.co"; // Replace with your project URL
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwb2JvZ21udWVlaG5vZmloc3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwODY4MTMsImV4cCI6MjA3MDY2MjgxM30.qJ8os4s1dWvQqyqwFPCwfnPNOX1BtyTurY1ldf_Lw04"; // Replace with anon key from API settings
-const SUPABASE_BUCKET = "mp3-files"; // Your bucket name
 
-async function uploadToServer(file, onProgress) {
-  const filePath = `${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;
 
-  // Supabase Storage upload endpoint
-  const url = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${filePath}`;
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-      "x-upsert": "true", // overwrite if exists
-    },
-    body: file
-  });
+ const SUPABASE_URL = "https://upobogmnueehnofihsvz.supabase.co"; // Replace with your project URL
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwb2JvZ21udWVlaG5vZmloc3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwODY4MTMsImV4cCI6MjA3MDY2MjgxM30.qJ8os4s1dWvQqyqwFPCwfnPNOX1BtyTurY1ldf_Lw04"; // Replace with anon key from API settings
+    const SUPABASE_BUCKET = "mp3-files"; // Your bucket name
 
-  if (!res.ok) {
-    throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+        function safeGet(id) {
+      const el = document.getElementById(id);
+      if (!el) {
+        console.warn(`Element with ID '${id}' not found.`);
+        return null;
+      }
+      return el;
+    }
+
+
+
+
+
+
+
+    async function uploadToServer(file) {
+      const filePath = `${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;
+      const url = `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(SUPABASE_BUCKET)}/${encodeURIComponent(filePath)}`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": file.type,
+          "x-upsert": "true"
+        },
+        body: file
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Upload failed: ${res.status} ${res.statusText} - ${errorText}\n\nHint: Enable 'INSERT' and 'UPDATE' in Supabase Storage RLS policy for bucket '${SUPABASE_BUCKET}'.`);
+      }
+
+      return `${SUPABASE_URL}/storage/v1/object/public/${encodeURIComponent(SUPABASE_BUCKET)}/${encodeURIComponent(filePath)}`;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('fileInput');
+  const linkOutput = document.getElementById('linkOutput');
+
+  if (!fileInput || !linkOutput) {
+    console.error('Missing file input or output element in DOM.');
+    return;
   }
 
-  // Return public URL
-  return {
-    url: `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${filePath}`
-  };
+  fileInput.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    linkOutput.textContent = 'Uploading…';
+
+    try {
+      const link = await uploadToServer(file);
+      linkOutput.innerHTML = `File uploaded: <a href="${link}" target="_blank">${link}</a>`;
+    } catch (err) {
+      linkOutput.textContent = err.message;
+      console.error(err);
+    }
+  });
+});
+
+
+
+
+
+
+
+
+
+
+    document.getElementById('fileInput').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const linkOutput = document.getElementById('linkOutput');
+      linkOutput.textContent = 'Uploading…';
+
+      try {
+        const link = await uploadToServer(file);
+        linkOutput.innerHTML = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${encodeURIComponent(filePath)}`;
+      } catch (err) {
+        linkOutput.textContent = err.message;
+        console.error(err);
+      }
+    });
+
+    const fileInput = document.getElementById('fileInput');
+const linkOutput = document.getElementById('linkOutput');
+
+if (fileInput && linkOutput) {
+  fileInput.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    linkOutput.textContent = 'Uploading…';
+
+    try {
+      const link = await uploadToServer(file);
+      linkOutput.innerHTML = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${encodeURIComponent(filePath)}`;
+    } catch (err) {
+      linkOutput.textContent = err.message;
+      console.error(err);
+    }
+  });
+} else {
+  console.error('Missing file input or output element in DOM.');
 }
+
+
 
 
     const qs = sel => document.querySelector(sel);
