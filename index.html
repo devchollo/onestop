@@ -171,6 +171,7 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
   }).then(res => res.json());
 
   // Step 2: Upload file directly to Supabase
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwb2JvZ21udWVlaG5vZmloc3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwODY4MTMsImV4cCI6MjA3MDY2MjgxM30.qJ8os4s1dWvQqyqwFPCwfnPNOX1BtyTurY1ldf_Lw04";
   const resp = await fetch(uploadUrl, {
     method: 'POST',
     headers: {
