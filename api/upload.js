@@ -25,14 +25,16 @@ export default async function handler(req, res) {
 
     // Stream the incoming file to Supabase
     const upstream = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': fileType,
-        'x-upsert': 'true'
-      },
-      body: req
-    });
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': fileType,
+    'x-upsert': 'true'
+  },
+  body: req,
+  duplex: 'half' // 👈 required for streaming uploads in Node 18+
+});
+
 
     if (!upstream.ok) {
       const errorText = await upstream.text();
