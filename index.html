@@ -163,16 +163,27 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
   const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 
   async function uploadToServer(file) {
-  const resp = await fetch(`/api/upload?fileName=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(file.type)}`, {
+  // Step 1: Ask server for signed upload URL
+  const { uploadUrl, publicUrl } = await fetch('/api/sign-upload', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName: file.name })
+  }).then(res => res.json());
+
+  // Step 2: Upload file directly to Supabase
+  const resp = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${YOUR_SUPABASE_ANON_KEY}`, // safe to expose anon key
+      'Content-Type': file.type,
+      'x-upsert': 'true'
+    },
     body: file
   });
 
-  if (!resp.ok) {
-    throw new Error(await resp.text());
-  }
+  if (!resp.ok) throw new Error(await resp.text());
 
-  return await resp.json(); // returns { publicUrl: "..." }
+  return { publicUrl };
 }
 
 
