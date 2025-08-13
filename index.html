@@ -162,31 +162,35 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
 <script defer>
   const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 
-  async function uploadToServer(file) {
-  // Step 1: Ask server for signed upload URL
-  const { uploadUrl, publicUrl } = await fetch('/api/sign-upload', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fileName: file.name })
-  }).then(res => res.json());
-
-  // Step 2: Upload file directly to Supabase
+  // ---- Supabase Upload Configuration ----
+  const SUPABASE_URL = "https://upobogmnueehnofihsvz.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwb2JvZ21udWVlaG5vZmloc3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwODY4MTMsImV4cCI6MjA3MDY2MjgxM30.qJ8os4s1dWvQqyqwFPCwfnPNOX1BtyTurY1ldf_Lw04";
-  const resp = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': file.type,
-      'x-upsert': 'true'
-    },
-    body: file
-  });
+  const SUPABASE_BUCKET = "mp3-files";
 
-  if (!resp.ok) throw new Error(await resp.text());
+  async function uploadToServer(file) {
+    const filePath = `${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;
+    const url = `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(SUPABASE_BUCKET)}/${encodeURIComponent(filePath)}`;
 
-  return { publicUrl };
-}
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": file.type,
+        "x-upsert": "true"
+      },
+      body: file
+    });
 
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Upload failed: ${res.status} ${res.statusText} - ${errorText}`);
+    }
+
+    // Return object as expected by handleFiles()
+    return {
+      url: `${SUPABASE_URL}/storage/v1/object/public/${encodeURIComponent(SUPABASE_BUCKET)}/${encodeURIComponent(filePath)}`
+    };
+  }
 
   const qs = sel => document.querySelector(sel);
   const rowsEl = qs('#rows');
@@ -285,8 +289,8 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
       render();
 
       try {
-        const res = await uploadToServer(file);
-        item.url = res.publicUrl;
+        const res = await uploadToServer(file, p => { item.progress = p; updateRowProgress(id, p); });
+        item.url = res.url;
         item.progress = 1;
         updateRowProgress(id, 1);
 
