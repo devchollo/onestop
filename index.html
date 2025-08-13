@@ -11,7 +11,7 @@
       --bg: #0f1115; /* dark base */
       --panel: rgba(255,255,255,0.06);
       --text: #e7e9ee;
-      --muted: #a6adbb;
+      --muted: #757d8b;
       --accent: #4f8cff;
       --accent-2: #7c4dff;
       --ok: #32d296;
@@ -142,15 +142,24 @@
   <dialog id="infoDialog" style="border:none; border-radius:16px; padding:0; max-width:560px; width:96%">
     <div style="padding:18px 18px 10px; font-weight:700">How uploads work</div>
     <div style="padding:0 18px 18px" class="note">
-      This UI is pure HTML/CSS/JS. Wire <b>uploadToServer()</b> to your backend (S3/R2 presigned URL or your API).
-      On success, return the final public URL so we can generate the embed code automatically.
+      When you choose or drop an MP3 file here, it’s uploaded directly to our secure cloud storage (powered by Supabase). <br><br>
+Each file gets a unique public link that you can: <br> <br>
+
+Copy and share anywhere. <br> <br>
+
+Embed on your client’s website with the provided HTML audio player code. <br> <br>
+
+The file is stored in a public bucket, so the link will always work without logging in.
+We don’t alter your audio — the exact file you upload is the one that will play.
+ <br> <br>
+Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links.
     </div>
     <div style="display:flex; gap:10px; justify-content:flex-end; padding:0 18px 18px">
       <button class="btn" onclick="document.getElementById('infoDialog').close()">Close</button>
     </div>
   </dialog>
 
-  <script defer>
+<!-- <script defer>
     // ---------------------------
     // Configuration
     // ---------------------------
@@ -429,5 +438,203 @@ if (fileInput && linkOutput) {
     // Info dialog
     qs('#infoButton').addEventListener('click', ()=> qs('#infoDialog').showModal());
   </script>
+-->
+
+<script defer>
+  const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+
+  // ---- Supabase Upload Configuration ----
+  const SUPABASE_URL = "https://upobogmnueehnofihsvz.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwb2JvZ21udWVlaG5vZmloc3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwODY4MTMsImV4cCI6MjA3MDY2MjgxM30.qJ8os4s1dWvQqyqwFPCwfnPNOX1BtyTurY1ldf_Lw04";
+  const SUPABASE_BUCKET = "mp3-files";
+
+  async function uploadToServer(file) {
+    const filePath = `${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;
+    const url = `${SUPABASE_URL}/storage/v1/object/${encodeURIComponent(SUPABASE_BUCKET)}/${encodeURIComponent(filePath)}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": file.type,
+        "x-upsert": "true"
+      },
+      body: file
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Upload failed: ${res.status} ${res.statusText} - ${errorText}`);
+    }
+
+    // Return object as expected by handleFiles()
+    return {
+      url: `${SUPABASE_URL}/storage/v1/object/public/${encodeURIComponent(SUPABASE_BUCKET)}/${encodeURIComponent(filePath)}`
+    };
+  }
+
+  const qs = sel => document.querySelector(sel);
+  const rowsEl = qs('#rows');
+  const embedCodeEl = qs('#embedCode');
+  const toastEl = qs('#toast');
+  const state = { items: [], selectedId: null };
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  function createRow(item) {
+    const row = document.createElement('div'); 
+    row.className = 'row'; 
+    row.dataset.id = item.id;
+    row.innerHTML = `
+      <div class="file-ico" aria-hidden="true">🎵</div>
+      <div>
+        <div class="name" title="${item.file.name}">${item.file.name}</div>
+        <div class="meta">${(item.file.type||'audio/mpeg')} • ${formatBytes(item.file.size)}</div>
+        <div class="progress"><div class="bar" style="width:${item.progress*100}%"></div></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-sm copy" title="Copy link" ${item.url ? '' : 'disabled'}>Copy 🔗</button>
+        <button class="btn btn-sm remove" title="Remove">🗑️</button>
+      </div>`;
+
+    const copyBtn = row.querySelector('.copy');
+    const removeBtn = row.querySelector('.remove');
+
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      selectItem(item.id);
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      if (!item.url) return;
+      await navigator.clipboard.writeText(item.url);
+      showToast('Link copied');
+    });
+
+    removeBtn.addEventListener('click', () => {
+      state.items = state.items.filter(x => x.id !== item.id);
+      if (state.selectedId === item.id) {
+        state.selectedId = null;
+        embedCodeEl.textContent = 'Select or upload a file to see its embed code.';
+        qs('#openLink').disabled = true;
+      }
+      row.remove();
+    });
+
+    return { row };
+  }
+
+  function render() {
+    rowsEl.innerHTML = '';
+    state.items.forEach(item => {
+      const { row } = createRow(item);
+      rowsEl.appendChild(row);
+    });
+  }
+
+  function updateRowProgress(id, value) {
+    const el = rowsEl.querySelector(`[data-id="${id}"] .bar`);
+    if (el) el.style.width = (value*100).toFixed(1) + '%';
+  }
+
+  function selectItem(id) {
+    state.selectedId = id;
+    const item = state.items.find(i => i.id === id);
+    if (!item || !item.url) return;
+    const code = `<audio controls>\n  <source src="${item.url}" type="audio/mpeg">\n  Your browser does not support the audio element.\n</audio>`;
+    embedCodeEl.textContent = code;
+    qs('#openLink').disabled = false;
+    qs('#openLink').onclick = () => window.open(item.url, '_blank');
+    embedCodeEl.focus();
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+  }
+
+  async function handleFiles(files) {
+    for (const file of files) {
+      if (file.type !== 'audio/mpeg') { showToast('Only MP3 (audio/mpeg) files are allowed'); continue; }
+      if (file.size > MAX_SIZE) { showToast('File too large (max 50 MB)'); continue; }
+
+      const id = crypto.randomUUID();
+      const item = { id, file, progress: 0, url: null };
+      state.items.unshift(item);
+      render();
+
+      try {
+        const res = await uploadToServer(file, p => { item.progress = p; updateRowProgress(id, p); });
+        item.url = res.url;
+        item.progress = 1;
+        updateRowProgress(id, 1);
+
+        // Enable copy button
+        const row = rowsEl.querySelector(`[data-id="${id}"]`);
+        if (row) { const copy = row.querySelector('.copy'); if (copy) copy.disabled = false; }
+
+        selectItem(id);
+        showToast('Upload complete');
+      } catch (err) {
+        console.error(err);
+        showToast('Upload failed');
+      }
+    }
+  }
+
+  // Drag & drop + chooser
+  const dz = qs('#dropzone');
+  const input = qs('#fileInput');
+  input.addEventListener('change', (e) => handleFiles(e.target.files));
+
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, (e) => {
+    e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; dz.classList.add('drag');
+  }));
+  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, (e) => {
+    e.preventDefault(); dz.classList.remove('drag');
+  }));
+  dz.addEventListener('drop', (e) => { handleFiles(e.dataTransfer.files); });
+
+  // Paste support
+  window.addEventListener('paste', (e) => {
+    const files = [...(e.clipboardData?.files || [])];
+    if (files.length) handleFiles(files);
+  });
+
+  // Copy embed code button
+  qs('#copyCode').addEventListener('click', async () => {
+    const code = embedCodeEl.textContent.trim();
+    if (!code) return;
+    await navigator.clipboard.writeText(code);
+    showToast('Embed code copied');
+  });
+
+  // Theme toggle
+  const themeBtn = qs('#themeToggle');
+  themeBtn.addEventListener('click', () => {
+    document.documentElement.classList.toggle('light');
+    if (document.documentElement.classList.contains('light')) {
+      document.documentElement.style.setProperty('--bg', '#f7f8fb');
+      document.documentElement.style.setProperty('--panel', '#ffffff');
+      document.documentElement.style.setProperty('--text', '#0f1115');
+      document.documentElement.style.setProperty('--muted', '#596175');
+    } else {
+      document.documentElement.style.removeProperty('--bg');
+      document.documentElement.style.removeProperty('--panel');
+      document.documentElement.style.removeProperty('--text');
+      document.documentElement.style.removeProperty('--muted');
+    }
+  });
+
+  // Info dialog
+  qs('#infoButton').addEventListener('click', () => qs('#infoDialog').showModal());
+</script>
+
 </body>
 </html>
