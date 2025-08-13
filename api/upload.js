@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
   try {
     const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // PRIVATE key
+    const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY; // PRIVATE key
     const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET;
 
     // Get query params for file info
