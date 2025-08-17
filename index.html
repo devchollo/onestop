@@ -336,9 +336,21 @@ async function uploadToServer(file, onProgress) {
         selectItem(id);
         showToast('Upload complete');
       } catch (err) {
-        console.error(err);
-         showToast(err.message || 'Upload failed');
-      }
+  console.error(err);
+  
+  let msg = 'Upload failed';
+
+  if (err.message) {
+    msg = err.message;
+  } else if (typeof err === 'string') {
+    msg = err;
+  } else if (err.response) {
+    // if err has response property (e.g. from fetch)
+    msg = `Upload failed: ${err.response.status} ${err.response.statusText}`;
+  }
+
+  showToast(msg);
+}
     }
   }
 
