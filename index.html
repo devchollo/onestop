@@ -1,205 +1,567 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>One Stop • MP3 Uploader</title>
-  <meta name="description" content="Upload MP3 files and get instant shareable + embeddable links." />
-  <link rel="icon" href="data:," />
-  <style>
-    :root{
-      --bg: #0f1115; /* dark base */
-      --panel: rgba(255,255,255,0.06);
-      --text: #e7e9ee;
-      --muted: #757d8b;
-      --accent: #4f8cff;
-      --accent-2: #7c4dff;
-      --ok: #32d296;
-      --warn: #ffcc00;
-      --danger: #ff5a5f;
-      --ring: rgba(79,140,255,.55);
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --radius: 18px;
-    }
-    @media (prefers-color-scheme: light){
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>One Stop • MP3 Uploader</title>
+    <meta
+      name="description"
+      content="Upload MP3 files and get instant shareable + embeddable links."
+    />
+    <link rel="icon" href="data:," />
+    <style>
       :root {
-  --bg: #0f1115;
-  --panel: rgba(255,255,255,0.06);
-  --text: #e7e9ee;
-  --muted: #757d8b;
-  --accent: #4f8cff;
-  --accent-2: #7c4dff;
-  --ok: #32d296;
-  --warn: #ffcc00;
-  --danger: #ff5a5f;
-  --ring: rgba(79,140,255,.55);
-  --shadow: 0 10px 30px rgba(0,0,0,.35);
-  --radius: 18px;
-}
+        --bg: #0f1115; /* dark base */
+        --panel: rgba(255, 255, 255, 0.06);
+        --text: #e7e9ee;
+        --muted: #757d8b;
+        --accent: #4f8cff;
+        --accent-2: #7c4dff;
+        --ok: #32d296;
+        --warn: #ffcc00;
+        --danger: #ff5a5f;
+        --ring: rgba(79, 140, 255, 0.55);
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --radius: 18px;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #0f1115;
+          --panel: rgba(255, 255, 255, 0.06);
+          --text: #e7e9ee;
+          --muted: #757d8b;
+          --accent: #4f8cff;
+          --accent-2: #7c4dff;
+          --ok: #32d296;
+          --warn: #ffcc00;
+          --danger: #ff5a5f;
+          --ring: rgba(79, 140, 255, 0.55);
+          --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+          --radius: 18px;
+        }
 
-.light {
-  --bg:#f7f8fb;
-  --panel:#ffffff;
-  --text:#0f1115;
-  --muted:#596175;
-  --ring: rgba(79,140,255,.45);
-  --shadow: 0 10px 25px rgba(16,24,40,.08);
-}
+        .light {
+          --bg: #f7f8fb;
+          --panel: #ffffff;
+          --text: #0f1115;
+          --muted: #596175;
+          --ring: rgba(79, 140, 255, 0.45);
+          --shadow: 0 10px 25px rgba(16, 24, 40, 0.08);
+        }
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font: 15px/1.45 system-ui, -apple-system, Segoe UI, Roboto,
+          "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+          "Segoe UI Emoji";
+        color: var(--text);
+        background: radial-gradient(
+            1200px 800px at 10% -10%,
+            rgba(124, 77, 255, 0.15),
+            transparent
+          ),
+          radial-gradient(
+            1000px 600px at 110% 10%,
+            rgba(79, 140, 255, 0.18),
+            transparent
+          ),
+          var(--bg);
+      }
+      .wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        box-shadow: var(--shadow);
+      }
+      h1 {
+        font-size: clamp(18px, 2.8vw, 24px);
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .btn {
+        appearance: none;
+        border: 1px solid transparent;
+        background: var(--panel);
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.2s ease;
+        box-shadow: var(--shadow);
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+      .btn:focus {
+        outline: 3px solid var(--ring);
+        outline-offset: 2px;
+      }
 
-    }
-    html,body{height:100%}
-    *{box-sizing:border-box}
-    body{
-      margin:0; font: 15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      color:var(--text); background: radial-gradient(1200px 800px at 10% -10%, rgba(124,77,255,.15), transparent),
-                         radial-gradient(1000px 600px at 110% 10%, rgba(79,140,255,.18), transparent),
-                         var(--bg);
-    }
-    .wrap{max-width:1040px; margin:0 auto; padding:28px;}
-    header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:28px}
-    .brand{display:flex; align-items:center; gap:12px}
-    .logo{width:36px;height:36px; border-radius:12px; background: linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow: var(--shadow)}
-    h1{font-size: clamp(18px, 2.8vw, 24px); margin:0}
-    .muted{color:var(--muted)}
-    .controls{display:flex; align-items:center; gap:8px}
-    .btn{appearance:none; border:1px solid transparent; background: var(--panel); color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; transition: .2s ease; box-shadow: var(--shadow)}
-    .btn:hover{transform: translateY(-1px)}
-    .btn:focus{outline: 3px solid var(--ring); outline-offset:2px}
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 18px;
+      }
+      .panel {
+        grid-column: span 8;
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius);
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+      }
+      .side {
+        grid-column: span 4;
+      }
+      @media (max-width: 920px) {
+        .panel {
+          grid-column: 1/-1;
+        }
+        .side {
+          grid-column: 1/-1;
+        }
+      }
 
-    .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap:18px}
-    .panel{grid-column: span 8; background:var(--panel); border:1px solid rgba(255,255,255,.08); border-radius: var(--radius); backdrop-filter: blur(10px); box-shadow: var(--shadow)}
-    .side{grid-column: span 4}
-    @media (max-width: 920px){ .panel{grid-column: 1/-1} .side{grid-column:1/-1} }
+      .panel-head {
+        padding: 18px 18px 10px;
+      }
+      .panel-title {
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .dropzone {
+        position: relative;
+        margin: 16px;
+        border: 2px dashed rgba(255, 255, 255, 0.18);
+        border-radius: calc(var(--radius) - 6px);
+        padding: 28px;
+        text-align: center;
+        transition: 0.2s ease;
+      }
+      .dropzone.drag {
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 2px var(--accent);
+      }
+      .dropzone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .dz-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: inline-grid;
+        place-items: center;
+        margin: 0 auto 10px;
+        background: linear-gradient(
+          135deg,
+          rgba(79, 140, 255, 0.25),
+          rgba(124, 77, 255, 0.25)
+        );
+      }
 
-    .panel-head{padding:18px 18px 10px}
-    .panel-title{font-weight:700; font-size: 18px}
-    .dropzone{position:relative; margin:16px; border: 2px dashed rgba(255,255,255,.18); border-radius: calc(var(--radius) - 6px); padding:28px; text-align:center; transition:.2s ease}
-    .dropzone.drag{border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent);}
-    .dropzone input[type=file]{position:absolute; inset:0; opacity:0; cursor:pointer}
-    .dz-icon{width:52px; height:52px; border-radius:14px; display:inline-grid; place-items:center; margin:0 auto 10px; background: linear-gradient(135deg, rgba(79,140,255,.25), rgba(124,77,255,.25));}
+      .rows {
+        padding: 2px 12px 18px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 42px 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 8px;
+        border-radius: 12px;
+      }
+      .row + .row {
+        margin-top: 6px;
+      }
+      .row:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .file-ico {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(
+          135deg,
+          rgba(79, 140, 255, 0.22),
+          rgba(124, 77, 255, 0.22)
+        );
+        display: grid;
+        place-items: center;
+      }
+      .name {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        gap: 6px;
+      }
+      .chip {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
 
-    .rows{padding: 2px 12px 18px;}
-    .row{display:grid; grid-template-columns: 42px 1fr auto; gap:12px; align-items:center; padding:10px 8px; border-radius:12px}
-    .row + .row{margin-top: 6px}
-    .row:hover{background: rgba(255,255,255,.06)}
-    .file-ico{width:42px;height:42px;border-radius:12px;background: linear-gradient(135deg, rgba(79,140,255,.22), rgba(124,77,255,.22)); display:grid; place-items:center}
-    .name{font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-    .meta{font-size:12px; color:var(--muted)}
-    .actions{display:flex; gap:6px}
-    .chip{font-size:12px; padding:6px 8px; border-radius:10px; background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.08)}
+      .progress {
+        height: 8px;
+        width: 100%;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+      .bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        transition: width 0.2s ease;
+      }
 
-    .progress{height:8px; width:100%; border-radius:999px; background: rgba(255,255,255,.08); overflow:hidden}
-    .bar{height:100%; width:0%; background: linear-gradient(90deg,var(--accent), var(--accent-2)); transition: width .2s ease}
+      .code {
+        background: #0b0d12;
+        color: #e6edf3;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 12px;
+        border-radius: 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 12.5px;
+        overflow: auto;
+      }
+      @media (prefers-color-scheme: light) {
+        .code {
+          background: #111827;
+          color: #f3f4f6;
+        }
+      }
 
-    .code{background: #0b0d12; color:#e6edf3; border:1px solid rgba(255,255,255,.08); padding:12px; border-radius:12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12.5px; overflow:auto}
-    @media (prefers-color-scheme: light){ .code{ background:#111827; color:#f3f4f6 } }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .kbd {
+        font: 600 12px/1 ui-monospace, Menlo, Monaco, Consolas, "Courier New";
+        padding: 4px 6px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
 
-    .note{font-size:13px; color:var(--muted)}
-    .kbd{font: 600 12px/1 ui-monospace, Menlo, Monaco, Consolas, "Courier New"; padding:4px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.18)}
-
-    /* Toast */
-    .toast{position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px); opacity:0; transition:.25s ease; background: var(--panel); backdrop-filter: blur(10px); border:1px solid rgba(255,255,255,.12); color:var(--text); padding:10px 14px; border-radius: 12px; box-shadow: var(--shadow)}
-    .toast.show{opacity:1; transform: translateX(-50%) translateY(0)}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
-        <div>
-          <h1>One Stop</h1>
-          <div class="muted">Upload MP3 → get link → embed anywhere</div>
-        </div>
-      </div>
-      <div class="controls">
-        <button class="btn" id="themeToggle" aria-label="Toggle theme">🌓 Theme</button>
-        <button class="btn" id="infoButton" aria-haspopup="dialog">ℹ️ Info</button>
-      </div>
-    </header>
-
-    <main class="grid" aria-live="polite">
-      <section class="panel" aria-label="Upload panel">
-        <div class="panel-head">
-          <div class="panel-title">Upload MP3</div>
-        </div>
-        <div class="dropzone" id="dropzone">
-          <div class="dz-icon">🎵</div>
-          <div><strong>Drag & drop</strong> MP3 files here or <u>click to choose</u>.</div>
-          <div class="note" style="margin-top:6px">Max 4.5 MB per file • Tip: You can paste from clipboard with <span class="kbd">Ctrl/⌘+V</span></div>
-          <input type="file" id="fileInput" accept="audio/mpeg" multiple aria-label="Choose MP3 files" />
-        </div>
-        <div class="rows" id="rows" aria-label="Upload list">
-          <!-- dynamic rows go here -->
-           <div id="linkOutput"></div>
-        </div>
-      </section>
-
-      <aside class="side">
-        <div class="panel" style="padding:16px">
-          <h3 style="margin:6px 6px 12px">Embed Preview</h3>
-          <div class="code" id="embedCode" role="region" aria-label="Generated embed code" tabindex="0">Select or upload a file to see its embed code.</div>
-          <div style="display:flex; gap:8px; margin-top:10px">
-            <button class="btn" id="copyCode">Copy Code</button>
-            <button class="btn" id="openLink" disabled>Open Link</button>
+      /* Toast */
+      .toast {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+        transition: 0.25s ease;
+        background: var(--panel);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>One Stop</h1>
+            <div class="muted">Upload MP3 → get link → embed anywhere</div>
           </div>
-          <p class="note" style="margin-top:12px">The code uses a direct MP3 URL. Paste it into SitePlus (HTML block) or any site builder that accepts custom HTML.</p>
         </div>
-        <div class="panel" style="padding:16px; margin-top:18px">
-          <h3 style="margin:6px">Tips</h3>
-          <ul class="note" style="margin:6px 0 0 16px; padding:0 0 6px 0">
-            <li>Keep filenames simple (a-z, 0-9, dashes).</li>
-            <li>Normalize audio levels before upload for consistent volume.</li>
-            <li>Use the same host for all embeds to avoid mixed content warnings (HTTP vs HTTPS).</li>
-          </ul>
+        <div class="controls">
+          <button class="btn" id="themeToggle" aria-label="Toggle theme">
+            🌓 Theme
+          </button>
+          <button class="btn" id="infoButton" aria-haspopup="dialog">
+            ℹ️ Info
+          </button>
         </div>
-      </aside>
-    </main>
-  </div>
+      </header>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      <main class="grid" aria-live="polite">
+        <section class="panel" aria-label="Upload panel">
+          <div class="panel-head">
+            <div class="panel-title">Upload MP3</div>
+          </div>
+          <div class="dropzone" id="dropzone">
+            <div class="dz-icon">🎵</div>
+            <div>
+              <strong>Drag & drop</strong> MP3 files here or
+              <u>click to choose</u>.
+            </div>
+            <div class="note" style="margin-top: 6px">
+              Max 4.5 MB per file • Tip: You can paste from clipboard with
+              <span class="kbd">Ctrl/⌘+V</span>
+            </div>
+            <input
+              type="file"
+              id="fileInput"
+              accept="audio/mpeg"
+              multiple
+              aria-label="Choose MP3 files"
+            />
+          </div>
+          <div class="rows" id="rows" aria-label="Upload list">
+            <!-- dynamic rows go here -->
+            <div id="linkOutput"></div>
+          </div>
+        </section>
 
-  <dialog id="infoDialog" style="border:none; border-radius:16px; padding:0; max-width:560px; width:96%">
-    <div style="padding:18px 18px 10px; font-weight:700">How uploads work</div>
-    <div style="padding:0 18px 18px" class="note">
-      When you choose or drop an MP3 file here, it’s uploaded directly to our secure cloud storage (powered by Supabase). <br><br>
-Each file gets a unique public link that you can: <br> <br>
-
-Copy and share anywhere. <br> <br>
-
-Embed on your client’s website with the provided HTML audio player code. <br> <br>
-
-The file is stored in a public bucket, so the link will always work without logging in.
-We don’t alter your audio — the exact file you upload is the one that will play.
- <br> <br>
-Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links.
+        <aside class="side">
+          <div class="panel" style="padding: 16px">
+            <h3 style="margin: 6px 6px 12px">Embed Preview</h3>
+            <div
+              class="code"
+              id="embedCode"
+              role="region"
+              aria-label="Generated embed code"
+              tabindex="0"
+            >
+              Select or upload a file to see its embed code.
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 10px">
+              <button class="btn" id="copyCode">Copy Code</button>
+              <button class="btn" id="openLink" disabled>Open Link</button>
+            </div>
+            <p class="note" style="margin-top: 12px">
+              The code uses a direct MP3 URL. Paste it into SitePlus (HTML
+              block) or any site builder that accepts custom HTML.
+            </p>
+          </div>
+          <div class="panel" style="padding: 16px; margin-top: 18px">
+            <h3 style="margin: 6px">Tips</h3>
+            <ul class="note" style="margin: 6px 0 0 16px; padding: 0 0 6px 0">
+              <li>Keep filenames simple (a-z, 0-9, dashes).</li>
+              <li>
+                Normalize audio levels before upload for consistent volume.
+              </li>
+              <li>
+                Use the same host for all embeds to avoid mixed content warnings
+                (HTTP vs HTTPS).
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </main>
     </div>
-    <div style="display:flex; gap:10px; justify-content:flex-end; padding:0 18px 18px">
-      <button class="btn" onclick="document.getElementById('infoDialog').close()">Close</button>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog
+      id="infoDialog"
+      style="
+        border: none;
+        border-radius: 16px;
+        padding: 0;
+        max-width: 560px;
+        width: 96%;
+      "
+    >
+      <div style="padding: 18px 18px 10px; font-weight: 700">
+        How uploads work
+      </div>
+      <div style="padding: 0 18px 18px" class="note">
+        When you choose or drop an MP3 file here, it’s uploaded directly to our
+        secure cloud storage (powered by Supabase). <br /><br />
+        Each file gets a unique public link that you can: <br />
+        <br />
+
+        Copy and share anywhere. <br />
+        <br />
+
+        Embed on your client’s website with the provided HTML audio player code.
+        <br />
+        <br />
+
+        The file is stored in a public bucket, so the link will always work
+        without logging in. We don’t alter your audio — the exact file you
+        upload is the one that will play.
+        <br />
+        <br />
+        Tip: Keep filenames simple (letters, numbers, and dashes) for the
+        cleanest links.
+      </div>
+      <div
+        style="
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+          padding: 0 18px 18px;
+        "
+      >
+        <button
+          class="btn"
+          onclick="document.getElementById('infoDialog').close()"
+        >
+          Close
+        </button>
+      </div>
+    </dialog>
+
+    <script defer>
+const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+const state = { items: [], selectedId: null };
+
+// --- Helper Functions ---
+const qs = (sel) => document.querySelector(sel);
+
+function showToast(msg) {
+  const toastEl = qs("#toast");
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  setTimeout(() => toastEl.classList.remove("show"), 3000);
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return "0 B";
+  const k = 1024, sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return (bytes / Math.pow(k, i)).toFixed(2) + " " + sizes[i];
+}
+
+function createRow(item) {
+  const rowsEl = qs("#rows");
+  const row = document.createElement("div");
+  row.className = "row";
+  row.dataset.id = item.id;
+  row.innerHTML = `
+    <div class="file-ico" aria-hidden="true">🎵</div>
+    <div>
+      <div style="word-break: break-word;" class="name" title="${item.file.name}">${item.file.name}</div>
+      <div class="meta">${item.file.type || "audio/mpeg"} • ${formatBytes(item.file.size)}</div>
+      <div class="progress"><div class="bar" style="width:${item.progress * 100}%"></div></div>
     </div>
-  </dialog>
+    <div class="actions">
+      <button class="btn btn-sm copy" title="Copy link" ${item.url ? "" : "disabled"}>Copy 🔗</button>
+      <button class="btn btn-sm remove" title="Remove">🗑️</button>
+    </div>`;
+  
+  const copyBtn = row.querySelector(".copy");
+  const removeBtn = row.querySelector(".remove");
 
-<script defer>
+  row.addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
+    selectItem(item.id);
+  });
 
-  const MAX_SIZE = 50 * 1024 * 1024; 
+  copyBtn.addEventListener("click", async () => {
+    if (!item.url) return;
+    await navigator.clipboard.writeText(item.url);
+    showToast("Link copied");
+  });
 
+  removeBtn.addEventListener("click", () => {
+    state.items = state.items.filter((x) => x.id !== item.id);
+    if (state.selectedId === item.id) {
+      state.selectedId = null;
+      qs("#embedCode").textContent = "Select or upload a file to see its embed code.";
+      qs("#openLink").disabled = true;
+    }
+    row.remove();
+  });
 
+  return { row };
+}
 
+function render() {
+  const rowsEl = qs("#rows");
+  rowsEl.innerHTML = "";
+  state.items.forEach(item => {
+    const { row } = createRow(item);
+    rowsEl.appendChild(row);
+  });
+}
+
+function updateRowProgress(id, value) {
+  const el = qs(`#rows [data-id="${id}"] .bar`);
+  if (el) el.style.width = (value * 100).toFixed(1) + "%";
+}
+
+function selectItem(id) {
+  state.selectedId = id;
+  const item = state.items.find(i => i.id === id);
+  if (!item || !item.url) return;
+  const embedCode = `<audio controls>\n  <source src="${item.url}" type="audio/mpeg">\n  Your browser does not support the audio element.\n</audio>`;
+  qs("#embedCode").textContent = embedCode;
+  qs("#openLink").disabled = false;
+  qs("#openLink").onclick = () => window.open(item.url, "_blank");
+  qs("#embedCode").focus();
+}
+
+// --- B2 Upload Function ---
 async function uploadToServer(file, onProgress) {
-  if (!file) throw new Error('No file provided');
+  if (!file) throw new Error("No file provided");
   if (file.size > MAX_SIZE) throw new Error(`File exceeds max size of ${MAX_SIZE} bytes`);
 
-  const formData = new FormData();
-  formData.append('file', file); 
+  // 1. Request upload credentials from backend
+  const credsRes = await fetch("/api/upload-file");
+  if (!credsRes.ok) throw new Error("Failed to get upload URL");
+  const { uploadUrl, authorizationToken, downloadUrl, bucketId } = await credsRes.json();
 
+  // 2. Upload directly to B2
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/upload-file', true);
+    xhr.open("POST", uploadUrl, true);
+    xhr.setRequestHeader("Authorization", authorizationToken);
+    xhr.setRequestHeader("X-Bz-File-Name", encodeURIComponent(file.name));
+    xhr.setRequestHeader("Content-Type", file.type || "b2/x-auto");
+    xhr.setRequestHeader("X-Bz-Content-Sha1", "do_not_verify");
 
-    // Progress event handler for upload
     xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable && typeof onProgress === 'function') {
-        onProgress(event.loaded / event.total); // fraction from 0 to 1
+      if (event.lengthComputable && typeof onProgress === "function") {
+        onProgress(event.loaded / event.total);
       }
     };
 
@@ -207,187 +569,100 @@ async function uploadToServer(file, onProgress) {
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const response = JSON.parse(xhr.responseText);
-          if (response.success) {
-            resolve({ url: response.fileUrl });
-
-          } else {
-            reject(new Error('Upload failed: ' + (response.error || 'unknown error')));
-          }
-        } catch (parseError) {
-          reject(new Error('Invalid JSON response from server'));
+          const fileUrl = `${downloadUrl}/file/${bucketId}/${encodeURIComponent(file.name)}`;
+          resolve({ url: fileUrl });
+        } catch (err) {
+          reject(new Error("Invalid response from B2"));
         }
       } else {
         reject(new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`));
       }
     };
 
-    xhr.onerror = () => reject(new Error('Upload failed (network error)'));
+    xhr.onerror = () => reject(new Error("Upload failed (network error)"));
 
-    // Send the form data containing the file
-    xhr.send(formData);
+    xhr.send(file); // raw file upload
   });
 }
-  // --- UI Helpers ---
-  const qs = sel => document.querySelector(sel);
-  const rowsEl = qs('#rows');
-  const embedCodeEl = qs('#embedCode');
-  const toastEl = qs('#toast');
-  const state = { items: [], selectedId: null };
 
-  function showToast(msg) {
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    setTimeout(() => toastEl.classList.remove('show'), 3000);
-  }
+// --- File Handling ---
+async function handleFiles(files) {
+  for (const file of files) {
+    if (file.type !== "audio/mpeg") {
+      showToast("Only MP3 (audio/mpeg) files are allowed");
+      continue;
+    }
+    if (file.size > MAX_SIZE) {
+      showToast("File too large (max 50 MB)");
+      continue;
+    }
 
-  function createRow(item) {
-    const row = document.createElement('div'); 
-    row.className = 'row'; 
-    row.dataset.id = item.id;
-    row.innerHTML = `
-      <div class="file-ico" aria-hidden="true">🎵</div>
-      <div>
-        <div style="word-break: break-word;" class="name" title="${item.file.name}">${item.file.name}</div>
-        <div class="meta">${(item.file.type||'audio/mpeg')} • ${formatBytes(item.file.size)}</div>
-        <div class="progress"><div class="bar" style="width:${item.progress*100}%"></div></div>
-      </div>
-      <div class="actions">
-        <button class="btn btn-sm copy" title="Copy link" ${item.url ? '' : 'disabled'}>Copy 🔗</button>
-        <button class="btn btn-sm remove" title="Remove">🗑️</button>
-      </div>`;
+    const id = crypto.randomUUID();
+    const item = { id, file, progress: 0, url: null };
+    state.items.unshift(item);
+    render();
 
-    const copyBtn = row.querySelector('.copy');
-    const removeBtn = row.querySelector('.remove');
+    try {
+      const res = await uploadToServer(file, (p) => {
+        item.progress = p;
+        updateRowProgress(id, p);
+      });
 
-    row.addEventListener('click', (e) => {
-      if (e.target.closest('button')) return;
-      selectItem(item.id);
-    });
+      item.url = res.url;
+      item.progress = 1;
+      updateRowProgress(id, 1);
 
-    copyBtn.addEventListener('click', async () => {
-      if (!item.url) return;
-      await navigator.clipboard.writeText(item.url);
-      showToast('Link copied');
-    });
-
-    removeBtn.addEventListener('click', () => {
-      state.items = state.items.filter(x => x.id !== item.id);
-      if (state.selectedId === item.id) {
-        state.selectedId = null;
-        embedCodeEl.textContent = 'Select or upload a file to see its embed code.';
-        qs('#openLink').disabled = true;
+      const row = qs(`#rows [data-id="${id}"]`);
+      if (row) {
+        const copy = row.querySelector(".copy");
+        if (copy) copy.disabled = false;
       }
-      row.remove();
-    });
 
-    return { row };
-  }
-
-  function render() {
-    rowsEl.innerHTML = '';
-    state.items.forEach(item => {
-      const { row } = createRow(item);
-      rowsEl.appendChild(row);
-    });
-  }
-
-  function updateRowProgress(id, value) {
-    const el = rowsEl.querySelector(`[data-id="${id}"] .bar`);
-    if (el) el.style.width = (value*100).toFixed(1) + '%';
-  }
-
-  function selectItem(id) {
-    state.selectedId = id;
-    const item = state.items.find(i => i.id === id);
-    if (!item || !item.url) return;
-    const code = `<audio controls>\n  <source src="${item.url}" type="audio/mpeg">\n  Your browser does not support the audio element.\n</audio>`;
-    embedCodeEl.textContent = code;
-    qs('#openLink').disabled = false;
-    qs('#openLink').onclick = () => window.open(item.url, '_blank');
-    embedCodeEl.focus();
-  }
-
-  function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
-  }
-
-  async function handleFiles(files) {
-    for (const file of files) {
-      if (file.type !== 'audio/mpeg') { showToast('Only MP3 (audio/mpeg) files are allowed'); continue; }
-      if (file.size > MAX_SIZE) { showToast('File too large (max 50 MB)'); continue; }
-
-      const id = crypto.randomUUID();
-      const item = { id, file, progress: 0, url: null };
-      state.items.unshift(item);
-      render();
-
-      try {
-        const res = await uploadToServer(file, p => { item.progress = p; updateRowProgress(id, p); });
-        item.url = res.url;
-        item.progress = 1;
-        updateRowProgress(id, 1);
-
-        const row = rowsEl.querySelector(`[data-id="${id}"]`);
-        if (row) { const copy = row.querySelector('.copy'); if (copy) copy.disabled = false; }
-
-        selectItem(id);
-        showToast('Upload complete');
-      } catch (err) {
-  console.error(err);
-  
-  let msg = 'Upload failed';
-
-  if (err.message) {
-    msg = err.message;
-  } else if (typeof err === 'string') {
-    msg = err;
-  } else if (err.response) {
-    // if err has response property (e.g. from fetch)
-    msg = `Upload failed: ${err.response.status} ${err.response.statusText}`;
-  }
-
-  showToast(msg);
-}
+      selectItem(id);
+      showToast("Upload complete");
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Upload failed");
     }
   }
+}
 
-  // --- Event bindings ---
-  const dz = qs('#dropzone');
-  const input = qs('#fileInput');
-  input.addEventListener('change', (e) => handleFiles(e.target.files));
+// --- Event Bindings ---
+const dz = qs("#dropzone");
+const input = qs("#fileInput");
 
-  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, (e) => {
-    e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; dz.classList.add('drag');
-  }));
-  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, (e) => {
-    e.preventDefault(); dz.classList.remove('drag');
-  }));
-  dz.addEventListener('drop', (e) => { handleFiles(e.dataTransfer.files); });
+input.addEventListener("change", (e) => handleFiles(e.target.files));
 
-  window.addEventListener('paste', (e) => {
-    const files = [...(e.clipboardData?.files || [])];
-    if (files.length) handleFiles(files);
-  });
+["dragenter", "dragover"].forEach(ev =>
+  dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add("drag"); })
+);
 
-  qs('#copyCode').addEventListener('click', async () => {
-    const code = embedCodeEl.textContent.trim();
-    if (!code) return;
-    await navigator.clipboard.writeText(code);
-    showToast('Embed code copied');
-  });
+["dragleave", "drop"].forEach(ev =>
+  dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove("drag"); })
+);
 
-  const themeBtn = qs('#themeToggle');
-  themeBtn.addEventListener('click', () => {
-    document.documentElement.classList.toggle('light');
-  });
+dz.addEventListener("drop", (e) => handleFiles(e.dataTransfer.files));
 
-  qs('#infoButton').addEventListener('click', () => qs('#infoDialog').showModal());
+window.addEventListener("paste", (e) => {
+  const files = [...(e.clipboardData?.files || [])];
+  if (files.length) handleFiles(files);
+});
+
+qs("#copyCode").addEventListener("click", async () => {
+  const code = qs("#embedCode").textContent.trim();
+  if (!code) return;
+  await navigator.clipboard.writeText(code);
+  showToast("Embed code copied");
+});
+
+qs("#themeToggle").addEventListener("click", () =>
+  document.documentElement.classList.toggle("light")
+);
+
+qs("#infoButton").addEventListener("click", () =>
+  qs("#infoDialog").showModal()
+);
 </script>
 
-
-
-</body>
+  </body>
 </html>
