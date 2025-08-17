@@ -163,13 +163,6 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
 
   const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 
-  // --- Upload handling via Vercel API ---
-  async function getUploadUrlFromServer() {
-    const res = await fetch("/api/b2-get-upload-url");
-    if (!res.ok) throw new Error("Failed to get upload URL");
-    return res.json();
-  }
-
 
 // Upload file to your backend API endpoint with progress callback
 async function uploadToServer(file, onProgress) {
