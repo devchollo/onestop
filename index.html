@@ -458,25 +458,17 @@
         if (file.size > MAX_SIZE)
           throw new Error(`File exceeds max size of ${MAX_SIZE} bytes`);
 
-        // Step 1: Get upload credentials from your backend
-        const credsRes = await fetch("/api/upload-file");
-        if (!credsRes.ok) throw new Error("Failed to get upload URL");
-        const { uploadUrl, authorizationToken, downloadUrl, bucketId } =
-          await credsRes.json();
+        const formData = new FormData();
+        formData.append("file", file);
 
-        // Step 2: Upload directly to B2
         return new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.open("POST", uploadUrl, true);
+          xhr.open("POST", "/api/upload-file", true);
 
-          xhr.setRequestHeader("Authorization", authorizationToken);
-          xhr.setRequestHeader("X-Bz-File-Name", encodeURIComponent(file.name));
-          xhr.setRequestHeader("Content-Type", file.type || "b2/x-auto");
-          xhr.setRequestHeader("X-Bz-Content-Sha1", "do_not_verify");
-
+          // Progress event handler for upload
           xhr.upload.onprogress = (event) => {
             if (event.lengthComputable && typeof onProgress === "function") {
-              onProgress(event.loaded / event.total);
+              onProgress(event.loaded / event.total); // fraction from 0 to 1
             }
           };
 
@@ -484,14 +476,17 @@
             if (xhr.status >= 200 && xhr.status < 300) {
               try {
                 const response = JSON.parse(xhr.responseText);
-                // Step 3: Construct the public file URL
-                const bucketName = response.bucketName || bucketId; // fallback
-                const fileUrl = `${downloadUrl}/file/${bucketName}/${encodeURIComponent(
-                  file.name
-                )}`;
-                resolve({ url: fileUrl });
-              } catch (err) {
-                reject(new Error("Invalid response from B2"));
+                if (response.success) {
+                  resolve({ url: response.fileUrl });
+                } else {
+                  reject(
+                    new Error(
+                      "Upload failed: " + (response.error || "unknown error")
+                    )
+                  );
+                }
+              } catch (parseError) {
+                reject(new Error("Invalid JSON response from server"));
               }
             } else {
               reject(
@@ -503,10 +498,10 @@
           xhr.onerror = () =>
             reject(new Error("Upload failed (network error)"));
 
-          xhr.send(file); // raw file, not FormData
+          // Send the form data containing the file
+          xhr.send(formData);
         });
       }
-
       // --- UI Helpers ---
       const qs = (sel) => document.querySelector(sel);
       const rowsEl = qs("#rows");
