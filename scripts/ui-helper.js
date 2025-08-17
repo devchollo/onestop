@@ -85,7 +85,7 @@ function selectItem(id) {
   // NEWLY ADDED - LAST TOUCHED
 
  // Create iframe player
-  const playerUrl = `/player.html?file=${encodeURIComponent(item.url)}`;
+  const playerUrl = `${item.url}`;
   qs("#pulsePlayerContainer").innerHTML = `
     <iframe 
       id="pulsePlayerFrame"
