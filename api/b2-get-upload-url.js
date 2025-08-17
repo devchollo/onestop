@@ -49,6 +49,43 @@ export default async function handler(req, res) {
       ? authData.apiUrl.slice(0, -1)
       : authData.apiUrl;
 
+      // After successfully authorizing:
+const listBucketsRes = await fetch(`${apiUrl}/b2api/v2/b2_list_buckets`, {
+  method: "POST",
+  headers: {
+    Authorization: authData.authorizationToken,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ accountId: authData.accountId }),
+});
+
+if (!listBucketsRes.ok) {
+  const errText = await listBucketsRes.text();
+  throw new Error(`b2_list_buckets failed with status ${listBucketsRes.status}: ${errText}`);
+}
+
+const listBucketsData = await listBucketsRes.json();
+
+console.log("Buckets available to key:", listBucketsData.buckets);
+
+// Optional: Check if your B2_BUCKET_ID exists in this list
+const foundBucket = listBucketsData.buckets.find((b) => b.bucketId === B2_BUCKET_ID);
+
+if (!foundBucket) {
+  console.warn(`⚠️ Bucket ID "${B2_BUCKET_ID}" NOT found in buckets accessible to this key.`);
+  return res.status(400).json({
+    error: `Bucket ID "${B2_BUCKET_ID}" not accessible by the provided application key.`,
+    availableBuckets: listBucketsData.buckets.map((b) => ({
+      bucketId: b.bucketId,
+      bucketName: b.bucketName,
+    })),
+  });
+}
+
+console.log(`Bucket "${foundBucket.bucketName}" found, proceeding.`);
+
+
+
     // 2. Get upload URL
     console.log("➡️ Requesting upload URL for bucket:", B2_BUCKET_ID);
 
