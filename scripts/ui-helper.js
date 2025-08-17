@@ -116,6 +116,7 @@
               item.progress = p;
               updateRowProgress(id, p);
             }).then(({ url }) => {
+                item.url = url;  
   initPulsePlayer(url); // load pulse player
 });;
             item.url = res.url;
