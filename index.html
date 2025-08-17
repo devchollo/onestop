@@ -161,13 +161,6 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
 
 <script defer>
 
-  console.log("Using bucketId:", process.env.B2_BUCKET_ID);
-console.log("AuthData:", {
-  apiUrl: authData.apiUrl,
-  accountId: authData.accountId,
-  token: authData.authorizationToken?.slice(0, 15) + "...",
-});
-
   const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 
   // --- Upload handling via Vercel API ---

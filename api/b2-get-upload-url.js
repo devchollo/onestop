@@ -17,6 +17,15 @@ export default async function handler(req, res) {
     const authData = await authRes.json();
     if (!authRes.ok) throw new Error(JSON.stringify(authData));
 
+//debugger here
+
+  console.log("Using bucketId:", B2_BUCKET_ID);
+console.log("AuthData:", {
+  apiUrl: authData.apiUrl,
+  accountId: authData.accountId,
+  token: authData.authorizationToken?.slice(0, 15) + "...",
+});
+
     // 2. Get upload URL
     const uploadRes = await fetch(
       `${authData.apiUrl}/b2api/v2/b2_get_upload_url`,
