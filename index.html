@@ -390,7 +390,11 @@
               aria-label="Pulse MP3 player"
             >
               <!-- Pulse MP3 player will be initialized here -->
-              <p class="note">Select a file above to play it here.</p>
+Pulse player will show here once a file has been uploaded.
+<div style="display: flex; gap: 8px; margin-top: 10px">
+              <button class="btn" id="copyCode2">Copy Code</button>
+            </div>
+              <p class="note">This player has been styled exactly as what you see. Copy Code and simple paste it anywhere.</p>
             </div>
           </div>
 
@@ -463,22 +467,6 @@
         </button>
       </div>
     </dialog>
-
-    <script>
-      function initPulsePlayer(fileUrl) {
-  const container = document.getElementById("pulsePlayerContainer");
-  container.innerHTML = ""; // clear previous player
-
-  const audio = document.createElement("audio");
-  audio.src = fileUrl;
-  audio.controls = true;
-  audio.autoplay = false;
-  audio.style.width = "100%";
-
-  container.appendChild(audio);
-}
-
-    </script>
 
     <script defer>
       const MAX_SIZE = 4.5 * 1024 * 1024; // 4.5 MB
