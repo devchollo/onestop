@@ -1,5 +1,12 @@
 export default async function handler(req, res) {
   try {
+
+    console.log("ENV CHECK:", {
+  keyId: process.env.B2_KEY_ID,
+  appKeySet: !!process.env.B2_APP_KEY,
+  bucketId: process.env.B2_BUCKET_ID,
+});
+
     const { B2_KEY_ID, B2_APP_KEY, B2_BUCKET_ID, B2_BUCKET_NAME } = process.env;
 
     // 🚨 sanity check before even calling Backblaze
