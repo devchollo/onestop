@@ -1,0 +1,20 @@
+{
+  "name": "onestop",
+  "version": "1.0.0",
+  "description": "> **Your team's quick & easy MP3 hosting hub** – Upload audio files, get instant shareable links & HTML embed codes for client websites that don't support native audio hosting (like SitePlus).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devchollo/onestop.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/devchollo/onestop/issues"
+  },
+  "homepage": "https://github.com/devchollo/onestop#readme"
+}
