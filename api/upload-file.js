@@ -1,23 +1,23 @@
-const nextConnect = require('next-connect');
+const ncImport = require('next-connect');
+const nextConnect = ncImport.default || ncImport;
 const multer = require('multer');
 const fs = require('fs').promises;
-const path = require('path');
 
-// Multer setup: store to temp dir
+// Multer config: save uploads to /tmp/
 const upload = multer({ dest: '/tmp/' });
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // Disable default body parsing to let multer handle it
   },
 };
 
-
-// Your existing B2 helper functions (authorize, getUploadUrl, uploadFileToB2)
-// Reuse these from your existing code or place here
+// Backblaze B2 helper functions
 
 async function b2AuthorizeAccount() {
   const { B2_KEY_ID, B2_APP_KEY } = process.env;
+  if (!B2_KEY_ID || !B2_APP_KEY) throw new Error('B2_KEY_ID or B2_APP_KEY not set');
+
   const credentials = Buffer.from(`${B2_KEY_ID}:${B2_APP_KEY}`).toString('base64');
   const res = await fetch('https://api.backblazeb2.com/b2api/v2/b2_authorize_account', {
     headers: { Authorization: `Basic ${credentials}` },
@@ -51,6 +51,7 @@ async function uploadFileToB2(uploadUrl, uploadAuthToken, fileBuffer, fileName, 
   return res.json();
 }
 
+// Create next-connect handler and apply multer middleware
 const handler = nextConnect();
 
 handler.use(upload.single('file'));
@@ -61,21 +62,25 @@ handler.post(async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Read file buffer
+    // Read file buffer from temp location
     const fileBuffer = await fs.readFile(req.file.path);
 
-    // Remove temp file after reading
+    // Delete temp file after reading
     await fs.unlink(req.file.path);
 
-    // Backblaze B2 env vars
+    // Verify bucket ID env var
     const { B2_BUCKET_ID } = process.env;
     if (!B2_BUCKET_ID) {
       return res.status(500).json({ error: 'B2_BUCKET_ID not set in environment' });
     }
 
-    // B2 flow
+    // Backblaze B2 upload flow
     const { apiUrl, authorizationToken } = await b2AuthorizeAccount();
-    const { uploadUrl, authorizationToken: uploadAuthToken } = await b2GetUploadUrl(apiUrl, authorizationToken, B2_BUCKET_ID);
+    const { uploadUrl, authorizationToken: uploadAuthToken } = await b2GetUploadUrl(
+      apiUrl,
+      authorizationToken,
+      B2_BUCKET_ID
+    );
 
     const uploadResult = await uploadFileToB2(
       uploadUrl,
@@ -87,7 +92,7 @@ handler.post(async (req, res) => {
 
     return res.status(200).json({ success: true, uploadResult });
   } catch (err) {
-    console.error(err);
+    console.error('Upload error:', err);
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
