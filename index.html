@@ -22,10 +22,30 @@
       --radius: 18px;
     }
     @media (prefers-color-scheme: light){
-      :root{
-        --bg:#f7f8fb; --panel:#ffffff; --text:#0f1115; --muted:#596175; --ring: rgba(79,140,255,.45);
-        --shadow: 0 10px 25px rgba(16,24,40,.08);
-      }
+      :root {
+  --bg: #0f1115;
+  --panel: rgba(255,255,255,0.06);
+  --text: #e7e9ee;
+  --muted: #757d8b;
+  --accent: #4f8cff;
+  --accent-2: #7c4dff;
+  --ok: #32d296;
+  --warn: #ffcc00;
+  --danger: #ff5a5f;
+  --ring: rgba(79,140,255,.55);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --radius: 18px;
+}
+
+.light {
+  --bg:#f7f8fb;
+  --panel:#ffffff;
+  --text:#0f1115;
+  --muted:#596175;
+  --ring: rgba(79,140,255,.45);
+  --shadow: 0 10px 25px rgba(16,24,40,.08);
+}
+
     }
     html,body{height:100%}
     *{box-sizing:border-box}
@@ -350,17 +370,6 @@ async function uploadToServer(file, onProgress) {
   const themeBtn = qs('#themeToggle');
   themeBtn.addEventListener('click', () => {
     document.documentElement.classList.toggle('light');
-    if (document.documentElement.classList.contains('light')) {
-      document.documentElement.style.setProperty('--bg', '#f7f8fb');
-      document.documentElement.style.setProperty('--panel', '#ffffff');
-      document.documentElement.style.setProperty('--text', '#0f1115');
-      document.documentElement.style.setProperty('--muted', '#596175');
-    } else {
-      document.documentElement.style.removeProperty('--bg');
-      document.documentElement.style.removeProperty('--panel');
-      document.documentElement.style.removeProperty('--text');
-      document.documentElement.style.removeProperty('--muted');
-    }
   });
 
   qs('#infoButton').addEventListener('click', () => qs('#infoDialog').showModal());
