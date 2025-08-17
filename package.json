@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/devchollo/onestop/issues"
   },
-  "homepage": "https://github.com/devchollo/onestop#readme"
+  "homepage": "https://github.com/devchollo/onestop#readme",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
 }
