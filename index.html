@@ -170,39 +170,44 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
     return res.json();
   }
 
+  // upload to server
+
   async function uploadToServer(file, onProgress) {
-    const upload = await getUploadUrlFromServer();
-    const fileName = `${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, "_")}`;
+  const formData = new FormData();
+  formData.append('file', file);
 
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", upload.uploadUrl, true);
-      xhr.setRequestHeader("Authorization", upload.authorizationToken);
-      xhr.setRequestHeader("X-Bz-File-Name", encodeURIComponent(fileName));
-      xhr.setRequestHeader("Content-Type", file.type);
-      xhr.setRequestHeader("X-Bz-Content-Sha1", "do_not_verify");
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload-file', true);
 
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable && onProgress) {
-          onProgress(e.loaded / e.total);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(e.loaded / e.total);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const res = JSON.parse(xhr.responseText);
+          if (res.success) {
+            resolve({ url: res.uploadResult.fileUrl || res.uploadResult.fileName }); // Adjust based on backend response
+          } else {
+            reject(new Error('Upload failed: ' + (res.error || 'unknown error')));
+          }
+        } catch (err) {
+          reject(new Error('Invalid JSON response from server'));
         }
-      };
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`));
+      }
+    };
 
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve({
-            url: `${upload.downloadUrl}/file/${encodeURIComponent(upload.bucketName)}/${encodeURIComponent(fileName)}`,
-          });
-        } else {
-          reject(new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`));
-        }
-      };
-
-      xhr.onerror = () => reject(new Error("Upload failed (network error)"));
-      xhr.send(file);
-    });
-  }
-
+    xhr.onerror = () => reject(new Error('Upload failed (network error)'));
+    xhr.send(formData);
+  });
+}
+  
   // --- UI Helpers ---
   const qs = sel => document.querySelector(sel);
   const rowsEl = qs('#rows');
