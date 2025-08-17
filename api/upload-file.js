@@ -1,16 +1,17 @@
-import nextConnect from 'next-connect';
-import multer from 'multer';
-import fs from 'fs/promises';
-import path from 'path';
+const nextConnect = require('next-connect');
+const multer = require('multer');
+const fs = require('fs').promises;
+const path = require('path');
 
-// Multer setup: store to temp dir, in memory option can be used alternately
+// Multer setup: store to temp dir
 const upload = multer({ dest: '/tmp/' });
 
 export const config = {
   api: {
-    bodyParser: false, // required for multer to work
+    bodyParser: false,
   },
 };
+
 
 // Your existing B2 helper functions (authorize, getUploadUrl, uploadFileToB2)
 // Reuse these from your existing code or place here
@@ -52,7 +53,6 @@ async function uploadFileToB2(uploadUrl, uploadAuthToken, fileBuffer, fileName, 
 
 const handler = nextConnect();
 
-// multer middleware to parse single file from 'file' field
 handler.use(upload.single('file'));
 
 handler.post(async (req, res) => {
