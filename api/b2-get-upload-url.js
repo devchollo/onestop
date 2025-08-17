@@ -2,6 +2,14 @@ export default async function handler(req, res) {
   try {
     const { B2_KEY_ID, B2_APP_KEY, B2_BUCKET_ID, B2_BUCKET_NAME } = process.env;
 
+    // 🚨 sanity check before even calling Backblaze
+    const expectedBucketId = "e76bb8adf2d8b6649480061f"; // from your screenshot
+    if (B2_BUCKET_ID?.trim() !== expectedBucketId) {
+      throw new Error(
+        `Bucket ID mismatch. Env has "${B2_BUCKET_ID}", expected "${expectedBucketId}".`
+      );
+    }
+
     // 1. Authorize account
     const authRes = await fetch(
       "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
@@ -14,33 +22,50 @@ export default async function handler(req, res) {
       }
     );
 
-    const authData = await authRes.json();
-    if (!authRes.ok) throw new Error(JSON.stringify(authData));
+    const authText = await authRes.text();
+    let authData;
+    try {
+      authData = JSON.parse(authText);
+    } catch {
+      throw new Error("Auth response not JSON: " + authText);
+    }
 
-//debugger here
+    if (!authRes.ok) {
+      throw new Error("Auth failed: " + JSON.stringify(authData));
+    }
 
-  console.log("Using bucketId:", B2_BUCKET_ID);
-console.log("AuthData:", {
-  apiUrl: authData.apiUrl,
-  accountId: authData.accountId,
-  token: authData.authorizationToken?.slice(0, 15) + "...",
-});
+    console.log("✅ AuthData:", {
+      apiUrl: authData.apiUrl,
+      accountId: authData.accountId,
+      token: authData.authorizationToken?.slice(0, 15) + "...",
+    });
 
     // 2. Get upload URL
+    console.log("➡️ Calling b2_get_upload_url with bucket:", B2_BUCKET_ID);
+
     const uploadRes = await fetch(
       `${authData.apiUrl}/b2api/v2/b2_get_upload_url`,
       {
         method: "POST",
         headers: {
-          Authorization: authData.authorizationToken, // <- must be exact
+          Authorization: authData.authorizationToken,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bucketId: B2_BUCKET_ID }), // <- must match your bucket
+        body: JSON.stringify({ bucketId: B2_BUCKET_ID }),
       }
     );
 
-    const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) throw new Error(JSON.stringify(uploadData));
+    const uploadText = await uploadRes.text();
+    let uploadData;
+    try {
+      uploadData = JSON.parse(uploadText);
+    } catch {
+      throw new Error("Upload response not JSON: " + uploadText);
+    }
+
+    if (!uploadRes.ok) {
+      throw new Error("Upload failed: " + JSON.stringify(uploadData));
+    }
 
     res.status(200).json({
       uploadUrl: uploadData.uploadUrl,
@@ -49,7 +74,7 @@ console.log("AuthData:", {
       bucketName: B2_BUCKET_NAME,
     });
   } catch (err) {
-    console.error("B2 API Error:", err);
+    console.error("❌ B2 API Error:", err);
     res.status(500).json({
       error: "Failed to get B2 upload URL",
       details: err.message || err,
