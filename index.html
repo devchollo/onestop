@@ -170,32 +170,38 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
     return res.json();
   }
 
-  // upload to server
 
-  async function uploadToServer(file, onProgress) {
+// Upload file to your backend API endpoint with progress callback
+async function uploadToServer(file, onProgress) {
+  if (!file) throw new Error('No file provided');
+  if (file.size > MAX_SIZE) throw new Error(`File exceeds max size of ${MAX_SIZE} bytes`);
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', file); // field name must match backend 'file'
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/upload-file', true);
 
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && onProgress) {
-        onProgress(e.loaded / e.total);
+    // Progress event handler for upload
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && typeof onProgress === 'function') {
+        onProgress(event.loaded / event.total); // fraction from 0 to 1
       }
     };
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
-          const res = JSON.parse(xhr.responseText);
-          if (res.success) {
-            resolve({ url: res.uploadResult.fileUrl || res.uploadResult.fileName });
+          const response = JSON.parse(xhr.responseText);
+          if (response.success) {
+            resolve({ 
+              url: response.uploadResult.fileUrl || response.uploadResult.fileName 
+            });
           } else {
-            reject(new Error('Upload failed: ' + (res.error || 'unknown error')));
+            reject(new Error('Upload failed: ' + (response.error || 'unknown error')));
           }
-        } catch {
+        } catch (parseError) {
           reject(new Error('Invalid JSON response from server'));
         }
       } else {
@@ -204,10 +210,11 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
     };
 
     xhr.onerror = () => reject(new Error('Upload failed (network error)'));
+
+    // Send the form data containing the file
     xhr.send(formData);
   });
 }
-  
   // --- UI Helpers ---
   const qs = sel => document.querySelector(sel);
   const rowsEl = qs('#rows');

@@ -3,11 +3,11 @@ import fs from 'fs/promises';
 
 export const config = {
   api: {
-    bodyParser: false, // Disable built-in bodyParser to use formidable
+    bodyParser: false, // disable built-in bodyParser as formidable handles the parsing
   },
 };
 
-// Validate required environment variables once
+// Validate required env vars once
 const {
   B2_KEY_ID,
   B2_APP_KEY,
@@ -23,7 +23,6 @@ async function b2AuthorizeAccount() {
   const res = await fetch('https://api.backblazeb2.com/b2api/v2/b2_authorize_account', {
     headers: { Authorization: `Basic ${credentials}` },
   });
-
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`b2_authorize_account failed: ${text}`);
@@ -40,7 +39,6 @@ async function b2GetUploadUrl(apiUrl, authorizationToken) {
     },
     body: JSON.stringify({ bucketId: B2_BUCKET_ID }),
   });
-
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`b2_get_upload_url failed: ${text}`);
@@ -59,7 +57,6 @@ async function uploadFileToB2(uploadUrl, uploadAuthToken, fileBuffer, fileName, 
     },
     body: fileBuffer,
   });
-
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Upload failed: ${text}`);
@@ -81,34 +78,38 @@ export default async function handler(req, res) {
       });
     });
 
-    const file = files.file; // Expecting 'file' field
+    const file = files.file;
     if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Support both 'filepath' (formidable v2+) and 'path' (older versions)
-    const filePath = file.filepath || file.path;
-    if (!filePath) {
-      return res.status(400).json({ error: 'Uploaded file path is missing' });
+    // Log for debugging
+    console.log('Uploaded file object:', file);
+
+    let fileBuffer;
+
+    if (typeof file.toBuffer === 'function') {
+      // Use formidable v2+ toBuffer method if available
+      fileBuffer = await file.toBuffer();
+    } else {
+      const filePath = file.filepath || file.path;
+      if (!filePath) {
+        return res.status(400).json({ error: 'Uploaded file path is missing' });
+      }
+      fileBuffer = await fs.readFile(filePath);
     }
 
-    // Read the uploaded file into a buffer
-    const fileBuffer = await fs.readFile(filePath);
-
-    // Authorize and get upload URL
     const { apiUrl, authorizationToken } = await b2AuthorizeAccount();
     const { uploadUrl, authorizationToken: uploadAuthToken } = await b2GetUploadUrl(apiUrl, authorizationToken);
 
-    // Upload file to Backblaze B2
     const uploadResult = await uploadFileToB2(
       uploadUrl,
       uploadAuthToken,
       fileBuffer,
-      file.originalFilename || file.name,
+      file.originalFilename || file.name || 'upload-' + Date.now(),
       file.mimetype || 'application/octet-stream'
     );
 
-    // Return successful response including info needed by frontend
     return res.status(200).json({ success: true, uploadResult });
   } catch (error) {
     console.error('Upload error:', error);
