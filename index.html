@@ -106,7 +106,7 @@
         <div class="dropzone" id="dropzone">
           <div class="dz-icon">🎵</div>
           <div><strong>Drag & drop</strong> MP3 files here or <u>click to choose</u>.</div>
-          <div class="note" style="margin-top:6px">Max 50 MB per file • Tip: You can paste from clipboard with <span class="kbd">Ctrl/⌘+V</span></div>
+          <div class="note" style="margin-top:6px">Max 4.5 MB per file • Tip: You can paste from clipboard with <span class="kbd">Ctrl/⌘+V</span></div>
           <input type="file" id="fileInput" accept="audio/mpeg" multiple aria-label="Choose MP3 files" />
         </div>
         <div class="rows" id="rows" aria-label="Upload list">
@@ -161,16 +161,16 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
 
 <script defer>
 
-  const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+  const MAX_SIZE = 50 * 1024 * 1024; 
 
 
-// Upload file to your backend API endpoint with progress callback
+
 async function uploadToServer(file, onProgress) {
   if (!file) throw new Error('No file provided');
   if (file.size > MAX_SIZE) throw new Error(`File exceeds max size of ${MAX_SIZE} bytes`);
 
   const formData = new FormData();
-  formData.append('file', file); // field name must match backend 'file'
+  formData.append('file', file); 
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -227,7 +227,7 @@ async function uploadToServer(file, onProgress) {
     row.innerHTML = `
       <div class="file-ico" aria-hidden="true">🎵</div>
       <div>
-        <div class="name" title="${item.file.name}">${item.file.name}</div>
+        <div style="word-break: break-word;" class="name" title="${item.file.name}">${item.file.name}</div>
         <div class="meta">${(item.file.type||'audio/mpeg')} • ${formatBytes(item.file.size)}</div>
         <div class="progress"><div class="bar" style="width:${item.progress*100}%"></div></div>
       </div>
@@ -317,7 +317,7 @@ async function uploadToServer(file, onProgress) {
         showToast('Upload complete');
       } catch (err) {
         console.error(err);
-        showToast('Upload failed');
+         showToast(err.message || 'Upload failed');
       }
     }
   }
