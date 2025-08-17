@@ -81,7 +81,8 @@ function selectItem(id) {
   const item = state.items.find((i) => i.id === id);
   if (!item || !item.url) return;
   const code = `<audio controls>\n  <source src="${item.url}" type="audio/mpeg">\n  Your browser does not support the audio element.\n</audio>`;
-
+  const pulsePlayer = qs("#pulsePlayerContainer");
+  pulsePlayer.textContent = item.url;  
   embedCodeEl.textContent = code;
 
   qs("#openLink").disabled = false;
