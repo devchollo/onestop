@@ -81,10 +81,27 @@ function selectItem(id) {
   const item = state.items.find((i) => i.id === id);
   if (!item || !item.url) return;
   const code = `<audio controls>\n  <source src="${item.url}" type="audio/mpeg">\n  Your browser does not support the audio element.\n</audio>`;
-  const pulsePlayer = qs("#pulsePlayerContainer");
-  pulsePlayer.textContent = item.url;  
-  embedCodeEl.textContent = code;
+    embedCodeEl.textContent = code;
+  // NEWLY ADDED - LAST TOUCHED
 
+ // Create iframe player
+  const playerUrl = `/player.html?file=${encodeURIComponent(item.url)}`;
+  qs("#pulsePlayerContainer").innerHTML = `
+    <iframe 
+      id="pulsePlayerFrame"
+      src="${playerUrl}" 
+      width="100%" 
+      height="150" 
+      frameborder="0">
+    </iframe>
+  `;
+
+  // Optionally: if you want to use postMessage instead of query param
+  const iframe = document.getElementById("pulsePlayerFrame");
+  iframe.onload = () => {
+    iframe.contentWindow.postMessage({ fileUrl: item.url }, "*");
+  };
+  // NEWLY ADDED - LAST TOUCHED
   qs("#openLink").disabled = false;
   qs("#openLink").onclick = () => window.open(item.url, "_blank");
   embedCodeEl.focus();
