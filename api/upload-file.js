@@ -1,19 +1,24 @@
-const ncImport = require('next-connect');
-const nextConnect = ncImport.default || ncImport;
-const multer = require('multer');
-const fs = require('fs').promises;
-
-// Multer config: save uploads to /tmp/
-const upload = multer({ dest: '/tmp/' });
+import multer from 'multer';
+import fs from 'fs/promises';
 
 export const config = {
-  api: {
-    bodyParser: false, // Disable default body parsing to let multer handle it
-  },
+  api: { bodyParser: false }, // disable default body parser so multer can handle it
 };
 
-// Backblaze B2 helper functions
+// Multer setup: files saved to /tmp/
+const upload = multer({ dest: '/tmp/' });
 
+// Helper to run multer as middleware
+function runMiddleware(req, res, fn) {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
+// Backblaze B2 helper functions
 async function b2AuthorizeAccount() {
   const { B2_KEY_ID, B2_APP_KEY } = process.env;
   if (!B2_KEY_ID || !B2_APP_KEY) throw new Error('B2_KEY_ID or B2_APP_KEY not set');
@@ -51,28 +56,20 @@ async function uploadFileToB2(uploadUrl, uploadAuthToken, fileBuffer, fileName, 
   return res.json();
 }
 
-// Create next-connect handler and apply multer middleware
-const handler = nextConnect();
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-handler.use(upload.single('file'));
-
-handler.post(async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
+    await runMiddleware(req, res, upload.single('file'));
 
-    // Read file buffer from temp location
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    // Read file buffer and clean up
     const fileBuffer = await fs.readFile(req.file.path);
-
-    // Delete temp file after reading
     await fs.unlink(req.file.path);
 
-    // Verify bucket ID env var
     const { B2_BUCKET_ID } = process.env;
-    if (!B2_BUCKET_ID) {
-      return res.status(500).json({ error: 'B2_BUCKET_ID not set in environment' });
-    }
+    if (!B2_BUCKET_ID) return res.status(500).json({ error: 'B2_BUCKET_ID not set' });
 
     // Backblaze B2 upload flow
     const { apiUrl, authorizationToken } = await b2AuthorizeAccount();
@@ -92,9 +89,7 @@ handler.post(async (req, res) => {
 
     return res.status(200).json({ success: true, uploadResult });
   } catch (err) {
-    console.error('Upload error:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error' });
+    console.error(err);
+    return res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
-});
-
-export default handler;
+}
