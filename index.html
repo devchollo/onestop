@@ -191,11 +191,11 @@ Tip: Keep filenames simple (letters, numbers, and dashes) for the cleanest links
         try {
           const res = JSON.parse(xhr.responseText);
           if (res.success) {
-            resolve({ url: res.uploadResult.fileUrl || res.uploadResult.fileName }); // Adjust based on backend response
+            resolve({ url: res.uploadResult.fileUrl || res.uploadResult.fileName });
           } else {
             reject(new Error('Upload failed: ' + (res.error || 'unknown error')));
           }
-        } catch (err) {
+        } catch {
           reject(new Error('Invalid JSON response from server'));
         }
       } else {
