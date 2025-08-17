@@ -64,21 +64,25 @@ export default async function handler(req, res) {
 
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    // Read file buffer and clean up
     const fileBuffer = await fs.readFile(req.file.path);
     await fs.unlink(req.file.path);
 
-    const { B2_BUCKET_ID } = process.env;
-    if (!B2_BUCKET_ID) return res.status(500).json({ error: 'B2_BUCKET_ID not set' });
+    const { B2_BUCKET_ID, B2_BUCKET_NAME } = process.env;
+    if (!B2_BUCKET_ID || !B2_BUCKET_NAME) {
+      return res.status(500).json({ error: 'B2_BUCKET_ID or B2_BUCKET_NAME not set' });
+    }
 
-    // Backblaze B2 upload flow
-    const { apiUrl, authorizationToken } = await b2AuthorizeAccount();
+    // Authorize
+    const { apiUrl, authorizationToken, downloadUrl } = await b2AuthorizeAccount();
+
+    // Get upload URL
     const { uploadUrl, authorizationToken: uploadAuthToken } = await b2GetUploadUrl(
       apiUrl,
       authorizationToken,
       B2_BUCKET_ID
     );
 
+    // Upload file
     const uploadResult = await uploadFileToB2(
       uploadUrl,
       uploadAuthToken,
@@ -87,7 +91,10 @@ export default async function handler(req, res) {
       req.file.mimetype
     );
 
-    return res.status(200).json({ success: true, uploadResult });
+    // Build public file URL
+    const fileUrl = `${downloadUrl}/file/${B2_BUCKET_NAME}/${encodeURIComponent(uploadResult.fileName)}`;
+
+    return res.status(200).json({ success: true, uploadResult, fileUrl });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message || 'Internal Server Error' });

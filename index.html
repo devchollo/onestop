@@ -195,9 +195,8 @@ async function uploadToServer(file, onProgress) {
         try {
           const response = JSON.parse(xhr.responseText);
           if (response.success) {
-            resolve({ 
-              url: response.uploadResult.fileUrl || response.uploadResult.fileName 
-            });
+            resolve({ url: response.fileUrl });
+
           } else {
             reject(new Error('Upload failed: ' + (response.error || 'unknown error')));
           }
