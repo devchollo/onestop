@@ -19,6 +19,8 @@
   "homepage": "https://github.com/devchollo/onestop#readme",
   "dependencies": {
     "formidable": "^3.5.4",
+    "multer": "^2.0.2",
+    "next-connect": "^1.0.0",
     "node-fetch": "^2.7.0"
   }
 }
