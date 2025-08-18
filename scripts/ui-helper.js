@@ -93,7 +93,7 @@ function selectItem(id) {
   qs("#pulsePlayerContainer").innerHTML = `
     <div class="pulse-audio-player" role="region" aria-label="Audio player with pulse ring and clean design" tabindex="0">
       <div class="track-info" aria-live="polite">
-        <div class="title" id="title">${item.title || "Unknown Title"}</div>
+        <div class="title" id="title">${item.fileName || "Unknown Title"}</div>
         <div class="artist" id="artist">${item.artist || "Unknown Artist"}</div>
       </div>
 
