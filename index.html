@@ -131,11 +131,11 @@
 
       .grid {
         display: grid;
-        grid-template-columns: repeat(12, 1fr);
+        grid-template-columns: repeat(16, 1fr);
         gap: 18px;
       }
       .panel {
-        grid-column: span 8;
+        grid-column: span 10;
         background: var(--panel);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: var(--radius);
@@ -143,7 +143,7 @@
         box-shadow: var(--shadow);
       }
       .side {
-        grid-column: span 4;
+        grid-column: span 6;
       }
       @media (max-width: 920px) {
         .panel {
@@ -596,14 +596,13 @@
           </div>
 
           <!-- Pulse player section  -->
-          <div class="panel" style="padding: 16px; margin-top: 18px">
+          <div class="panel" style="padding: 16px; margin-top: 18px;">
             <h3 style="margin: 6px 6px 12px">Pulse Player</h3>
             <div
               id="pulsePlayerContainer"
               role="region"
               aria-label="Pulse MP3 player"
             >
-
               <p class="note">
                 This player has been styled exactly as what you see. Copy Code
                 and simple paste it anywhere.
