@@ -2,6 +2,7 @@
 const qs = (sel) => document.querySelector(sel);
 const rowsEl = qs("#rows");
 const embedCodeEl = qs("#embedCode");
+const pulsePlayer = qs("#pulsePlayerContainer");
 const toastEl = qs("#toast");
 const state = { items: [], selectedId: null };
 
@@ -95,7 +96,7 @@ const filename = pathname.substring(pathname.lastIndexOf('/') + 1);
 console.log(filename); 
 
   const playerUrl = `${item.url}`;
-  qs("#pulsePlayerContainer").innerHTML = `
+  pulsePlayer.innerHTML = `
     <div class="pulse-audio-player" role="region" aria-label="Audio player with pulse ring and clean design" tabindex="0">
       <div class="track-info" aria-live="polite">
         <div class="title" id="title">${filename || "Unknown Title"}</div>
@@ -240,6 +241,13 @@ qs("#copyCode").addEventListener("click", async () => {
   const code = embedCodeEl.textContent.trim();
   if (!code) return;
   await navigator.clipboard.writeText(code);
+  showToast("Embed code copied");
+});
+
+qs("#copyPulseCode").addEventListener("click", async () => {
+  const pulseCode = pulsePlayer.textContent.trim();
+  if (!pulseCode) return;
+  await navigator.clipboard.writeText(pulseCode);
   showToast("Embed code copied");
 });
 
