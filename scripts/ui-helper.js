@@ -302,7 +302,13 @@ document.body.appendChild(script);
 initPulsePlayer();
 loadNewTrack(item.url);
 
-
+qs("#copyPulseCode").addEventListener("click", async () => {
+  const playerCode = pulsePlayer.innerHTML.trim(); 
+  if (!playerCode) return;
+  const pulseCode = pulsePlayer.appendChild(script);
+  await navigator.clipboard.writeText(pulseCode);
+  showToast("Embed code copied");
+});
 
   qs("#openLink").disabled = false;
   qs("#openLink").onclick = () => window.open(item.url, "_blank");
@@ -400,14 +406,6 @@ qs("#copyCode").addEventListener("click", async () => {
   const code = embedCodeEl.textContent.trim();
   if (!code) return;
   await navigator.clipboard.writeText(code);
-  showToast("Embed code copied");
-});
-
-qs("#copyPulseCode").addEventListener("click", async () => {
-  const playerCode = pulsePlayer.innerHTML.trim(); 
-  if (!playerCode) return;
-  const pulseCode = pulsePlayer.appendChild(script);
-  await navigator.clipboard.writeText(pulseCode);
   showToast("Embed code copied");
 });
 
