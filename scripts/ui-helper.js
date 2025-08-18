@@ -306,7 +306,7 @@ qs("#copyPulseCode").addEventListener("click", async () => {
   const playerCode = pulsePlayer.innerHTML.trim(); 
   if (!playerCode) return;
   const pulseCode = pulsePlayer.appendChild(script);
-  await navigator.clipboard.writeText(pulseCode);
+  await navigator.clipboard.writeText(JSON.stringify(pulseCode));
   showToast("Embed code copied");
 });
 
