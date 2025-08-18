@@ -144,7 +144,7 @@ pulsePlayer.innerHTML = `
   </div>
 `;
 
-// --- Inject the SCRIPT dynamically so it executes ---
+// --- Injecting Dynamic Script ---
 const script = document.createElement("script");
 script.textContent = `
 
@@ -404,8 +404,9 @@ qs("#copyCode").addEventListener("click", async () => {
 });
 
 qs("#copyPulseCode").addEventListener("click", async () => {
-  const pulseCode = pulsePlayer.innerHTML.trim(); 
-  if (!pulseCode) return;
+  const playerCode = pulsePlayer.innerHTML.trim(); 
+  if (!playerCode) return;
+  const pulseCode = playerCode.appendChild(script);
   await navigator.clipboard.writeText(pulseCode);
   showToast("Embed code copied");
 });
