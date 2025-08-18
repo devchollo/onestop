@@ -245,11 +245,12 @@ qs("#copyCode").addEventListener("click", async () => {
 });
 
 qs("#copyPulseCode").addEventListener("click", async () => {
-  const pulseCode = pulsePlayer.textContent.trim();
+  const pulseCode = pulsePlayer.innerHTML.trim(); 
   if (!pulseCode) return;
   await navigator.clipboard.writeText(pulseCode);
   showToast("Embed code copied");
 });
+
 
 const themeBtn = qs("#themeToggle");
 themeBtn.addEventListener("click", () => {
