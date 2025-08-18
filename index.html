@@ -739,154 +739,157 @@
 
 
 <script>
-    const params = new URLSearchParams(window.location.search);
-const fileUrl = params.get("file");
-if (fileUrl) {
-  loadNewTrack(fileUrl);
-}
-
-    function loadNewTrack(fileUrl) {
-  let audio = document.getElementById("audio");
+function loadNewTrack(fileUrl) {
+  const audio = document.getElementById("audio");
   const source = document.getElementById("audio-source");
 
-  // Set new src
+  if (!audio || !source) return;
+
   source.src = fileUrl;
-  audio.load(); // Reload audio with new source
-  audio.play(); // Optional: autoplay after load
+  audio.load();
+  audio.play().catch(() => {}); // avoid autoplay errors
 }
 
-  (function () {
-    let audio = document.getElementById("audio");
-    const playPause = document.getElementById("play-pause");
-    const currentTimeEl = document.getElementById("current-time");
-    const durationEl = document.getElementById("duration");
-    const progressContainer = document.getElementById("progress-container");
-    const progressBar = document.getElementById("progress-bar");
-    const progressHandle = document.getElementById("progress-handle");
-    const volumeInput = document.getElementById("volume");
-    const muteButton = document.getElementById("mute-button");
+function initPulsePlayer() {
+  const audio = document.getElementById("audio");
+  const playPause = document.getElementById("play-pause");
+  const currentTimeEl = document.getElementById("current-time");
+  const durationEl = document.getElementById("duration");
+  const progressContainer = document.getElementById("progress-container");
+  const progressBar = document.getElementById("progress-bar");
+  const progressHandle = document.getElementById("progress-handle");
+  const volumeInput = document.getElementById("volume");
+  const muteButton = document.getElementById("mute-button");
 
-    let dragging = false;
+  if (!audio || !playPause) {
+    console.error("Player elements not found. Did you inject the HTML?");
+    return;
+  }
 
-    function formatTime(time) {
-      if (isNaN(time)) return "0:00";
-      const mins = Math.floor(time / 60);
-      const secs = Math.floor(time % 60);
-      return mins + ":" + (secs < 10 ? "0" : "") + secs;
+  let dragging = false;
+
+  function formatTime(time) {
+    if (isNaN(time)) return "0:00";
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return mins + ":" + (secs < 10 ? "0" : "") + secs;
+  }
+
+  function updatePlayPause() {
+    const svg = playPause.querySelector("svg");
+    if (audio.paused) {
+      playPause.setAttribute("aria-label", "Play");
+      playPause.title = "Play";
+      playPause.setAttribute("aria-pressed", "false");
+      svg.innerHTML = '<polygon points="6 4 20 12 6 20"></polygon>';
+      playPause.classList.remove("playing");
+    } else {
+      playPause.setAttribute("aria-label", "Pause");
+      playPause.title = "Pause";
+      playPause.setAttribute("aria-pressed", "true");
+      svg.innerHTML =
+        `<rect x="6" y="4" width="4" height="16"></rect>
+         <rect x="14" y="4" width="4" height="16"></rect>`;
+      playPause.classList.add("playing");
     }
+  }
 
-    // Play/pause updates
-    function updatePlayPause() {
-      if (audio.paused) {
-        playPause.setAttribute("aria-label", "Play");
-        playPause.title = "Play";
-        playPause.setAttribute("aria-pressed", "false");
-        playPause.querySelector("svg").innerHTML =
-          '<polygon points="6 4 20 12 6 20"></polygon>'; // Play shape
-        playPause.classList.remove("playing");
-      } else {
-        playPause.setAttribute("aria-label", "Pause");
-        playPause.title = "Pause";
-        playPause.setAttribute("aria-pressed", "true");
-        playPause.querySelector("svg").innerHTML =
-          `<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>`; // Pause shape
-        playPause.classList.add("playing");
-      }
+  function updateProgress() {
+    if (!audio.duration) return;
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progressBar.style.width = percent + "%";
+    progressHandle.style.left = percent + "%";
+    progressContainer.setAttribute("aria-valuenow", Math.floor(percent));
+    currentTimeEl.textContent = formatTime(audio.currentTime);
+  }
+
+  function seek(positionX) {
+    const rect = progressContainer.getBoundingClientRect();
+    let x = positionX - rect.left;
+    x = Math.min(rect.width, Math.max(0, x));
+    const percent = x / rect.width;
+    audio.currentTime = percent * audio.duration;
+  }
+
+  // 🔹 Events
+  playPause.addEventListener("click", () => {
+    if (audio.paused) audio.play();
+    else audio.pause();
+  });
+
+  audio.addEventListener("play", updatePlayPause);
+  audio.addEventListener("pause", updatePlayPause);
+  audio.addEventListener("timeupdate", () => {
+    if (!dragging) updateProgress();
+  });
+  audio.addEventListener("loadedmetadata", () => {
+    durationEl.textContent = formatTime(audio.duration);
+    updateProgress();
+    volumeInput.value = audio.volume;
+  });
+
+  progressContainer.addEventListener("mousedown", (e) => {
+    dragging = true;
+    seek(e.clientX);
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (dragging) seek(e.clientX);
+  });
+  window.addEventListener("mouseup", () => {
+    dragging = false;
+  });
+
+  progressContainer.addEventListener("keydown", (e) => {
+    if (!audio.duration) return;
+    const step = audio.duration * 0.05;
+    if (["ArrowRight", "ArrowUp"].includes(e.key)) {
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + step);
+      e.preventDefault();
+    } else if (["ArrowLeft", "ArrowDown"].includes(e.key)) {
+      audio.currentTime = Math.max(0, audio.currentTime - step);
+      e.preventDefault();
+    } else if (e.key === "Home") {
+      audio.currentTime = 0;
+      e.preventDefault();
+    } else if (e.key === "End") {
+      audio.currentTime = audio.duration;
+      e.preventDefault();
     }
+  });
 
-    // Update progress bar and time
-    function updateProgress() {
-      if (!audio.duration) return;
-      const percent = (audio.currentTime / audio.duration) * 100;
-      progressBar.style.width = percent + "%";
-      progressHandle.style.left = percent + "%";
-      progressContainer.setAttribute("aria-valuenow", Math.floor(percent));
-      currentTimeEl.textContent = formatTime(audio.currentTime);
+  volumeInput.addEventListener("input", (e) => {
+    audio.volume = e.target.value;
+    muteButton.setAttribute("aria-label", audio.volume === 0 ? "Unmute" : "Mute");
+    muteButton.title = audio.volume === 0 ? "Unmute" : "Mute";
+  });
+
+  muteButton.addEventListener("click", () => {
+    if (audio.volume > 0) {
+      audio.volume = 0;
+      volumeInput.value = 0;
+      muteButton.setAttribute("aria-label", "Unmute");
+      muteButton.title = "Unmute";
+    } else {
+      audio.volume = 0.5;
+      volumeInput.value = 0.5;
+      muteButton.setAttribute("aria-label", "Mute");
+      muteButton.title = "Mute";
     }
+  });
 
-    // Seek audio position based on click or drag
-    function seek(positionX) {
-      const rect = progressContainer.getBoundingClientRect();
-      let x = positionX - rect.left;
-      x = Math.min(rect.width, Math.max(0, x));
-      const percent = x / rect.width;
-      audio.currentTime = percent * audio.duration;
-    }
+  updatePlayPause();
+}
 
-    // Event handlers
-    playPause.addEventListener("click", () => {
-      if (audio.paused) audio.play();
-      else audio.pause();
-      updatePlayPause();
-    });
-    audio.addEventListener("play", updatePlayPause);
-    audio.addEventListener("pause", updatePlayPause);
-    audio.addEventListener("timeupdate", () => {
-      if (!dragging) updateProgress();
-    });
-    audio.addEventListener("loadedmetadata", () => {
-      durationEl.textContent = formatTime(audio.duration);
-      updateProgress();
-      volumeInput.value = audio.volume;
-    });
+// 🔹 Initialize once DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  initPulsePlayer();
 
-    progressContainer.addEventListener("mousedown", (e) => {
-      dragging = true;
-      seek(e.clientX);
-    });
-    window.addEventListener("mousemove", (e) => {
-      if (dragging) seek(e.clientX);
-    });
-    window.addEventListener("mouseup", () => {
-      dragging = false;
-    });
-    progressContainer.addEventListener("keydown", (e) => {
-      if (!audio.duration) return;
-      const step = audio.duration * 0.05;
-      if (["ArrowRight", "ArrowUp"].includes(e.key)) {
-        audio.currentTime = Math.min(audio.duration, audio.currentTime + step);
-        e.preventDefault();
-      } else if (["ArrowLeft", "ArrowDown"].includes(e.key)) {
-        audio.currentTime = Math.max(0, audio.currentTime - step);
-        e.preventDefault();
-      } else if (e.key === "Home") {
-        audio.currentTime = 0;
-        e.preventDefault();
-      } else if (e.key === "End") {
-        audio.currentTime = audio.duration;
-        e.preventDefault();
-      }
-    });
-
-    // Volume input control
-    volumeInput.addEventListener("input", (e) => {
-      audio.volume = e.target.value;
-      if (audio.volume === 0) {
-        muteButton.setAttribute("aria-label", "Unmute");
-        muteButton.title = "Unmute";
-      } else {
-        muteButton.setAttribute("aria-label", "Mute");
-        muteButton.title = "Mute";
-      }
-    });
-
-    // Mute toggle
-    muteButton.addEventListener("click", () => {
-      if (audio.volume > 0) {
-        audio.volume = 0;
-        volumeInput.value = 0;
-        muteButton.setAttribute("aria-label", "Unmute");
-        muteButton.title = "Unmute";
-      } else {
-        audio.volume = 0.5;
-        volumeInput.value = 0.5;
-        muteButton.setAttribute("aria-label", "Mute");
-        muteButton.title = "Mute";
-      }
-    });
-
-    updatePlayPause();
-  })();
+  // If query param exists, load file
+  const params = new URLSearchParams(window.location.search);
+  const fileUrl = params.get("file");
+  if (fileUrl) loadNewTrack(fileUrl);
+});
 </script>
+
   </body>
 </html>
