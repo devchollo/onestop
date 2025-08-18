@@ -80,61 +80,65 @@ function selectItem(id) {
   state.selectedId = id;
   const item = state.items.find((i) => i.id === id);
   if (!item || !item.url) return;
-  const code = `<audio controls>\n  <source src="${item.url}" type="audio/mpeg">\n  Your browser does not support the audio element.\n</audio>`;
-    embedCodeEl.textContent = code;
-  // NEWLY ADDED - LAST TOUCHED
 
- // Create iframe player
+  // Update the embed code preview
+  const code = `<audio controls>
+  <source src="${item.url}" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>`;
+  embedCodeEl.textContent = code;
+
+  // Inject custom player HTML
   const playerUrl = `${item.url}`;
   qs("#pulsePlayerContainer").innerHTML = `
-       <div class="pulse-audio-player" role="region" aria-label="Audio player with pulse ring and clean design" tabindex="0">
-  <div class="track-info" aria-live="polite">
-    <div class="title" id="title">Example Track Title</div>
-    <div class="artist" id="artist">Artist Name</div>
-  </div>
+    <div class="pulse-audio-player" role="region" aria-label="Audio player with pulse ring and clean design" tabindex="0">
+      <div class="track-info" aria-live="polite">
+        <div class="title" id="title">${item.title || "Unknown Title"}</div>
+        <div class="artist" id="artist">${item.artist || "Unknown Artist"}</div>
+      </div>
 
-  <div class="player-row">
-    <button class="play-pause" id="play-pause" aria-label="Play" title="Play/Pause" aria-pressed="false">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
-        <polygon points="6 4 20 12 6 20" />
-      </svg>
-      <span class="pulse-ring"></span>
-    </button>
+      <div class="player-row">
+        <button class="play-pause" id="play-pause" aria-label="Play" title="Play/Pause" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
+            <polygon points="6 4 20 12 6 20" />
+          </svg>
+          <span class="pulse-ring"></span>
+        </button>
 
-    <div class="progress-container" id="progress-container" role="slider" tabindex="0" aria-label="Audio progress bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div class="progress-bar" id="progress-bar"></div>
-      <div class="progress-handle" id="progress-handle" style="left: 0%;"></div>
+        <div class="progress-container" id="progress-container" role="slider" tabindex="0" aria-label="Audio progress bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-bar" id="progress-bar"></div>
+          <div class="progress-handle" id="progress-handle" style="left: 0%;"></div>
+        </div>
+
+        <div class="time-container">
+          <span class="current-time" id="current-time">0:00</span> /
+          <span class="duration" id="duration">0:00</span>
+        </div>
+
+        <div class="volume-container">
+          <button class="mute-button" id="mute-button" aria-label="Mute audio" title="Mute/Unmute">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+              <polygon points="3 9 9 9 13 5 13 19 9 15 3 15 3 9"></polygon>
+              <path d="M16 12a4 4 0 0 1 0 0"></path>
+            </svg>
+          </button>
+          <input type="range" id="volume" aria-label="Volume slider" min="0" max="1" step="0.01" value="1" />
+        </div>
+      </div>
+
+      <audio id="audio" preload="metadata" tabindex="-1">
+        <source id="audio-source" src="${playerUrl}" type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
     </div>
-
-    <div class="time-container">
-      <span class="current-time" id="current-time">0:00</span> /
-      <span class="duration" id="duration">0:00</span>
-    </div>
-
-    <div class="volume-container">
-      <button class="mute-button" id="mute-button" aria-label="Mute audio" title="Mute/Unmute">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
-          <polygon points="3 9 9 9 13 5 13 19 9 15 3 15 3 9"></polygon>
-          <path d="M16 12a4 4 0 0 1 0 0"></path>
-        </svg>
-      </button>
-      <input type="range" id="volume" aria-label="Volume slider" min="0" max="1" step="0.01" value="1" />
-    </div>
-  </div>
-
-  <audio id="audio" preload="metadata" tabindex="-1">
-    <source src="${playerUrl}" type="audio/mpeg" />
-    Your browser does not support the audio element.
-  </audio>
-</div>
   `;
 
-  // Optionally: if you want to use postMessage instead of query param
-  const iframe = document.getElementById("pulsePlayerFrame");
-  iframe.onload = () => {
-    iframe.contentWindow.postMessage({ fileUrl: item.url }, "*");
-  };
-  // NEWLY ADDED - LAST TOUCHED
+  // 🔹 Initialize the custom player logic AFTER injecting HTML
+  initPulsePlayer();
+
+  // 🔹 Load the selected track into the player
+  loadNewTrack(item.url);
+
   qs("#openLink").disabled = false;
   qs("#openLink").onclick = () => window.open(item.url, "_blank");
   embedCodeEl.focus();
