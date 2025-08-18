@@ -89,273 +89,69 @@ function selectItem(id) {
 </audio>`;
   embedCodeEl.textContent = code;
 
-  // Inject custom player HTML
-  const url = new URL(item.url);
-const pathname = url.pathname; 
-const filename = pathname.substring(pathname.lastIndexOf('/') + 1);
-console.log(filename); 
+ 
+// PULSE PLAYER HANDLER
+// --- Inject the HTML + CSS only ---
+const url = new URL(item.url);
+const pathname = url.pathname;
+const filename = pathname.substring(pathname.lastIndexOf("/") + 1);
 
-  const playerUrl = `${item.url}`;
-  pulsePlayer.innerHTML = `
-   <style>
-  .pulse-audio-player {
-    max-width: 350px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-    user-select: none;
-    color: #222;
-    background: #fff;
-    border-radius: 14px;
-    padding: 18px 22px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-  }
+const playerUrl = `${item.url}`;
+pulsePlayer.innerHTML = `
+  <style>
+    /* --- all your CSS here --- */
+  </style>
 
-  .track-info {
-    margin-bottom: 14px;
-  }
-  .title {
-    font-weight: 600;
-    font-size: 1.2rem;
-    line-height: 1.2;
-    color: #2b2b2b;
-  }
-  .artist {
-    font-weight: 400;
-    color: #666;
-    font-size: 0.9rem;
-    line-height: 1.2;
-    margin-top: 2px;
-  }
-
-  .player-row {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-  }
-
-  /* Play button with subtle pulse ring */
-  .play-pause {
-    position: relative;
-    background: #4caf50;
-    border: none;
-    border-radius: 50%;
-    width: 52px;
-    height: 52px;
-    color: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 12px #4caf5077;
-    transition: background 0.3s ease;
-  }
-  .play-pause:hover,
-  .play-pause:focus {
-    background: #66bb6a;
-    outline: none;
-    box-shadow: 0 0 18px #4caf50bb;
-  }
-  .play-pause:active {
-    background: #388e3c;
-    box-shadow: 0 0 8px #2a652bbb;
-  }
-  .play-pause svg {
-    pointer-events: none;
-  }
-
-  .pulse-ring {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    background: rgba(76, 175, 80, 0.3);
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.4s ease;
-    animation: pulse 1.8s infinite ease-in-out;
-  }
-
-  /* Animate pulse only when playing */
-  .play-pause.playing .pulse-ring {
-    opacity: 1;
-  }
-
-  @keyframes pulse {
-    0% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 0.5;
-    }
-    50% {
-      transform: translate(-50%, -50%) scale(1.3);
-      opacity: 0;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 0.5;
-    }
-  }
-
-  /* Progress bar container */
-  .progress-container {
-    position: relative;
-    flex-grow: 1;
-    height: 10px;
-    border-radius: 6px;
-    background: #e8e8e8;
-    cursor: pointer;
-  }
-  .progress-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 10px;
-    border-radius: 6px 0 0 6px;
-    background: #4caf50;
-    width: 0;
-    transition: width 0.1s linear;
-  }
-  .progress-handle {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #4caf50;
-    border: 2px solid #fff;
-    box-shadow: 0 0 8px #4caf5066;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  .progress-container:hover .progress-handle,
-  .progress-handle:focus {
-    background: #66bb6a;
-    outline: none;
-  }
-
-  .time-container {
-    min-width: 75px;
-    font-variant-numeric: tabular-nums;
-    font-size: 0.9rem;
-    color: #555;
-    user-select: none;
-  }
-
-  /* Volume controls */
-  .volume-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .mute-button {
-    background: transparent;
-    border: none;
-    color: #666;
-    cursor: pointer;
-    transition: color 0.3s ease;
-    padding: 0;
-  }
-  .mute-button:hover,
-  .mute-button:focus {
-    color: #4caf50;
-    outline: none;
-  }
-  .mute-button svg {
-    pointer-events: none;
-  }
-  #volume {
-    width: 80px;
-    height: 6px;
-    -webkit-appearance: none;
-    background: #ddd;
-    border-radius: 3px;
-    cursor: pointer;
-  }
-  #volume::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    background: #4caf50;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 8px #4caf5066;
-    transition: background-color 0.3s ease;
-    margin-top: -4px;
-  }
-  #volume:hover::-webkit-slider-thumb,
-  #volume:focus::-webkit-slider-thumb {
-    background: #66bb6a;
-    outline: none;
-    box-shadow: 0 0 12px #4caf5077;
-  }
-  #volume::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
-    background: #4caf50;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 8px #4caf5066;
-    transition: background-color 0.3s ease;
-  }
-  #volume:hover::-moz-range-thumb,
-  #volume:focus::-moz-range-thumb {
-    background: #66bb6a;
-    outline: none;
-    box-shadow: 0 0 12px #4caf5077;
-  }
-</style>
-    <div class="pulse-audio-player" role="region" aria-label="Audio player with pulse ring and clean design" tabindex="0">
-      <div class="track-info" aria-live="polite">
-        <div class="title" id="title">${filename || "Unknown Title"}</div>
-        <div class="artist" id="artist">${item.artist || "Unknown Artist"}</div>
-      </div>
-
-      <div class="player-row">
-        <button class="play-pause" id="play-pause" aria-label="Play" title="Play/Pause" aria-pressed="false">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
-            <polygon points="6 4 20 12 6 20" />
-          </svg>
-          <span class="pulse-ring"></span>
-        </button>
-
-        <div class="progress-container" id="progress-container" role="slider" tabindex="0" aria-label="Audio progress bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <div class="progress-bar" id="progress-bar"></div>
-          <div class="progress-handle" id="progress-handle" style="left: 0%;"></div>
-        </div>
-
-        <div class="time-container">
-          <span class="current-time" id="current-time">0:00</span> /
-          <span class="duration" id="duration">0:00</span>
-        </div>
-
-        <div class="volume-container">
-          <button class="mute-button" id="mute-button" aria-label="Mute audio" title="Mute/Unmute">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
-              <polygon points="3 9 9 9 13 5 13 19 9 15 3 15 3 9"></polygon>
-              <path d="M16 12a4 4 0 0 1 0 0"></path>
-            </svg>
-          </button>
-          <input type="range" id="volume" aria-label="Volume slider" min="0" max="1" step="0.01" value="1" />
-        </div>
-      </div>
-
-      <audio id="audio" preload="metadata" tabindex="-1">
-        <source id="audio-source" src="${playerUrl}" type="audio/mpeg" />
-        Your browser does not support the audio element.
-      </audio>
+  <div class="pulse-audio-player" role="region" aria-label="Audio player with pulse ring and clean design" tabindex="0">
+    <div class="track-info" aria-live="polite">
+      <div class="title" id="title">${filename || "Unknown Title"}</div>
+      <div class="artist" id="artist">${item.artist || "Unknown Artist"}</div>
     </div>
-    <script>
+
+    <div class="player-row">
+      <button class="play-pause" id="play-pause" aria-label="Play" title="Play/Pause" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round">
+          <polygon points="6 4 20 12 6 20"></polygon>
+        </svg>
+        <span class="pulse-ring"></span>
+      </button>
+
+      <div class="progress-container" id="progress-container" role="slider" tabindex="0" aria-label="Audio progress bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-bar" id="progress-bar"></div>
+        <div class="progress-handle" id="progress-handle" style="left: 0%;"></div>
+      </div>
+
+      <div class="time-container">
+        <span class="current-time" id="current-time">0:00</span> /
+        <span class="duration" id="duration">0:00</span>
+      </div>
+
+      <div class="volume-container">
+        <button class="mute-button" id="mute-button" aria-label="Mute audio" title="Mute/Unmute">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+            <polygon points="3 9 9 9 13 5 13 19 9 15 3 15 3 9"></polygon>
+            <path d="M16 12a4 4 0 0 1 0 0"></path>
+          </svg>
+        </button>
+        <input type="range" id="volume" aria-label="Volume slider" min="0" max="1" step="0.01" value="1" />
+      </div>
+    </div>
+
+    <audio id="audio" preload="metadata" tabindex="-1">
+      <source id="audio-source" src="${playerUrl}" type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
+  </div>
+`;
+
+// --- Inject the SCRIPT dynamically so it executes ---
+const script = document.createElement("script");
+script.textContent = `
+
 function loadNewTrack(fileUrl) {
   const audio = document.getElementById("audio");
   const source = document.getElementById("audio-source");
-
   if (!audio || !source) return;
-
   source.src = fileUrl;
   audio.load();
   audio.play().catch(() => {}); // avoid autoplay errors
@@ -399,8 +195,8 @@ function initPulsePlayer() {
       playPause.title = "Pause";
       playPause.setAttribute("aria-pressed", "true");
       svg.innerHTML =
-        \`<rect x="6" y="4" width="4" height="16"></rect>
-         <rect x="14" y="4" width="4" height="16"></rect>\`;
+        '<rect x="6" y="4" width="4" height="16"></rect>' +
+        '<rect x="14" y="4" width="4" height="16"></rect>';
       playPause.classList.add("playing");
     }
   }
@@ -422,7 +218,7 @@ function initPulsePlayer() {
     audio.currentTime = percent * audio.duration;
   }
 
-  // 🔹 Events
+  // Events
   playPause.addEventListener("click", () => {
     if (audio.paused) audio.play();
     else audio.pause();
@@ -491,24 +287,22 @@ function initPulsePlayer() {
   updatePlayPause();
 }
 
-// 🔹 Initialize once DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   initPulsePlayer();
-
-  // If query param exists, load file
   const params = new URLSearchParams(window.location.search);
   const fileUrl = params.get("file");
   if (fileUrl) loadNewTrack(fileUrl);
 });
-</script>
+`;
 
-  `;
+// attach script so it runs
+document.body.appendChild(script);
 
-  // 🔹 Initialize the custom player logic AFTER injecting HTML
-  initPulsePlayer();
+// init now for selected track
+initPulsePlayer();
+loadNewTrack(item.url);
 
-  // 🔹 Load the selected track into the player
-  loadNewTrack(item.url);
+
 
   qs("#openLink").disabled = false;
   qs("#openLink").onclick = () => window.open(item.url, "_blank");
