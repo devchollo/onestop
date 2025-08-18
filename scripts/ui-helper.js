@@ -303,12 +303,25 @@ initPulsePlayer();
 loadNewTrack(item.url);
 
 qs("#copyPulseCode").addEventListener("click", async () => {
-  const playerCode = pulsePlayer.innerHTML.trim(); 
-  if (!playerCode) return;
-  const pulseCode = pulsePlayer.appendChild(script);
-  await navigator.clipboard.writeText(JSON.stringify(pulseCode));
-  showToast("Embed code copied");
+  // HTML + CSS
+  const playerHTML = pulsePlayer.innerHTML.trim();
+
+  // JS as plain text
+  const playerScript = script.textContent.trim();
+
+  // Wrap the script in <script> tags for embedding
+  const fullEmbedCode = `
+<div id="pulse-player">
+${playerHTML}
+</div>
+<script>
+${playerScript}
+</script>`;
+
+  await navigator.clipboard.writeText(fullEmbedCode);
+  showToast("Embed code copied!");
 });
+
 
   qs("#openLink").disabled = false;
   qs("#openLink").onclick = () => window.open(item.url, "_blank");
