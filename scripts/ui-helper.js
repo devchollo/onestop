@@ -97,6 +97,218 @@ console.log(filename);
 
   const playerUrl = `${item.url}`;
   pulsePlayer.innerHTML = `
+   <style>
+  .pulse-audio-player {
+    max-width: 350px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    user-select: none;
+    color: #222;
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 22px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+  }
+
+  .track-info {
+    margin-bottom: 14px;
+  }
+  .title {
+    font-weight: 600;
+    font-size: 1.2rem;
+    line-height: 1.2;
+    color: #2b2b2b;
+  }
+  .artist {
+    font-weight: 400;
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    margin-top: 2px;
+  }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  /* Play button with subtle pulse ring */
+  .play-pause {
+    position: relative;
+    background: #4caf50;
+    border: none;
+    border-radius: 50%;
+    width: 52px;
+    height: 52px;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 12px #4caf5077;
+    transition: background 0.3s ease;
+  }
+  .play-pause:hover,
+  .play-pause:focus {
+    background: #66bb6a;
+    outline: none;
+    box-shadow: 0 0 18px #4caf50bb;
+  }
+  .play-pause:active {
+    background: #388e3c;
+    box-shadow: 0 0 8px #2a652bbb;
+  }
+  .play-pause svg {
+    pointer-events: none;
+  }
+
+  .pulse-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: rgba(76, 175, 80, 0.3);
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    animation: pulse 1.8s infinite ease-in-out;
+  }
+
+  /* Animate pulse only when playing */
+  .play-pause.playing .pulse-ring {
+    opacity: 1;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.3);
+      opacity: 0;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.5;
+    }
+  }
+
+  /* Progress bar container */
+  .progress-container {
+    position: relative;
+    flex-grow: 1;
+    height: 10px;
+    border-radius: 6px;
+    background: #e8e8e8;
+    cursor: pointer;
+  }
+  .progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 10px;
+    border-radius: 6px 0 0 6px;
+    background: #4caf50;
+    width: 0;
+    transition: width 0.1s linear;
+  }
+  .progress-handle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4caf50;
+    border: 2px solid #fff;
+    box-shadow: 0 0 8px #4caf5066;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  .progress-container:hover .progress-handle,
+  .progress-handle:focus {
+    background: #66bb6a;
+    outline: none;
+  }
+
+  .time-container {
+    min-width: 75px;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9rem;
+    color: #555;
+    user-select: none;
+  }
+
+  /* Volume controls */
+  .volume-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mute-button {
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    padding: 0;
+  }
+  .mute-button:hover,
+  .mute-button:focus {
+    color: #4caf50;
+    outline: none;
+  }
+  .mute-button svg {
+    pointer-events: none;
+  }
+  #volume {
+    width: 80px;
+    height: 6px;
+    -webkit-appearance: none;
+    background: #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  #volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #4caf50;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px #4caf5066;
+    transition: background-color 0.3s ease;
+    margin-top: -4px;
+  }
+  #volume:hover::-webkit-slider-thumb,
+  #volume:focus::-webkit-slider-thumb {
+    background: #66bb6a;
+    outline: none;
+    box-shadow: 0 0 12px #4caf5077;
+  }
+  #volume::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #4caf50;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px #4caf5066;
+    transition: background-color 0.3s ease;
+  }
+  #volume:hover::-moz-range-thumb,
+  #volume:focus::-moz-range-thumb {
+    background: #66bb6a;
+    outline: none;
+    box-shadow: 0 0 12px #4caf5077;
+  }
+</style>
     <div class="pulse-audio-player" role="region" aria-label="Audio player with pulse ring and clean design" tabindex="0">
       <div class="track-info" aria-live="polite">
         <div class="title" id="title">${filename || "Unknown Title"}</div>
@@ -137,6 +349,159 @@ console.log(filename);
         Your browser does not support the audio element.
       </audio>
     </div>
+    <script>
+function loadNewTrack(fileUrl) {
+  const audio = document.getElementById("audio");
+  const source = document.getElementById("audio-source");
+
+  if (!audio || !source) return;
+
+  source.src = fileUrl;
+  audio.load();
+  audio.play().catch(() => {}); // avoid autoplay errors
+}
+
+function initPulsePlayer() {
+  const audio = document.getElementById("audio");
+  const playPause = document.getElementById("play-pause");
+  const currentTimeEl = document.getElementById("current-time");
+  const durationEl = document.getElementById("duration");
+  const progressContainer = document.getElementById("progress-container");
+  const progressBar = document.getElementById("progress-bar");
+  const progressHandle = document.getElementById("progress-handle");
+  const volumeInput = document.getElementById("volume");
+  const muteButton = document.getElementById("mute-button");
+
+  if (!audio || !playPause) {
+    console.error("Player elements not found. Did you inject the HTML?");
+    return;
+  }
+
+  let dragging = false;
+
+  function formatTime(time) {
+    if (isNaN(time)) return "0:00";
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return mins + ":" + (secs < 10 ? "0" : "") + secs;
+  }
+
+  function updatePlayPause() {
+    const svg = playPause.querySelector("svg");
+    if (audio.paused) {
+      playPause.setAttribute("aria-label", "Play");
+      playPause.title = "Play";
+      playPause.setAttribute("aria-pressed", "false");
+      svg.innerHTML = '<polygon points="6 4 20 12 6 20"></polygon>';
+      playPause.classList.remove("playing");
+    } else {
+      playPause.setAttribute("aria-label", "Pause");
+      playPause.title = "Pause";
+      playPause.setAttribute("aria-pressed", "true");
+      svg.innerHTML =
+        \`<rect x="6" y="4" width="4" height="16"></rect>
+         <rect x="14" y="4" width="4" height="16"></rect>\`;
+      playPause.classList.add("playing");
+    }
+  }
+
+  function updateProgress() {
+    if (!audio.duration) return;
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progressBar.style.width = percent + "%";
+    progressHandle.style.left = percent + "%";
+    progressContainer.setAttribute("aria-valuenow", Math.floor(percent));
+    currentTimeEl.textContent = formatTime(audio.currentTime);
+  }
+
+  function seek(positionX) {
+    const rect = progressContainer.getBoundingClientRect();
+    let x = positionX - rect.left;
+    x = Math.min(rect.width, Math.max(0, x));
+    const percent = x / rect.width;
+    audio.currentTime = percent * audio.duration;
+  }
+
+  // 🔹 Events
+  playPause.addEventListener("click", () => {
+    if (audio.paused) audio.play();
+    else audio.pause();
+  });
+
+  audio.addEventListener("play", updatePlayPause);
+  audio.addEventListener("pause", updatePlayPause);
+  audio.addEventListener("timeupdate", () => {
+    if (!dragging) updateProgress();
+  });
+  audio.addEventListener("loadedmetadata", () => {
+    durationEl.textContent = formatTime(audio.duration);
+    updateProgress();
+    volumeInput.value = audio.volume;
+  });
+
+  progressContainer.addEventListener("mousedown", (e) => {
+    dragging = true;
+    seek(e.clientX);
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (dragging) seek(e.clientX);
+  });
+  window.addEventListener("mouseup", () => {
+    dragging = false;
+  });
+
+  progressContainer.addEventListener("keydown", (e) => {
+    if (!audio.duration) return;
+    const step = audio.duration * 0.05;
+    if (["ArrowRight", "ArrowUp"].includes(e.key)) {
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + step);
+      e.preventDefault();
+    } else if (["ArrowLeft", "ArrowDown"].includes(e.key)) {
+      audio.currentTime = Math.max(0, audio.currentTime - step);
+      e.preventDefault();
+    } else if (e.key === "Home") {
+      audio.currentTime = 0;
+      e.preventDefault();
+    } else if (e.key === "End") {
+      audio.currentTime = audio.duration;
+      e.preventDefault();
+    }
+  });
+
+  volumeInput.addEventListener("input", (e) => {
+    audio.volume = e.target.value;
+    muteButton.setAttribute("aria-label", audio.volume === 0 ? "Unmute" : "Mute");
+    muteButton.title = audio.volume === 0 ? "Unmute" : "Mute";
+  });
+
+  muteButton.addEventListener("click", () => {
+    if (audio.volume > 0) {
+      audio.volume = 0;
+      volumeInput.value = 0;
+      muteButton.setAttribute("aria-label", "Unmute");
+      muteButton.title = "Unmute";
+    } else {
+      audio.volume = 0.5;
+      volumeInput.value = 0.5;
+      muteButton.setAttribute("aria-label", "Mute");
+      muteButton.title = "Mute";
+    }
+  });
+
+  updatePlayPause();
+}
+
+// 🔹 Initialize once DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  initPulsePlayer();
+
+  // If query param exists, load file
+  const params = new URLSearchParams(window.location.search);
+  const fileUrl = params.get("file");
+  if (fileUrl) loadNewTrack(fileUrl);
+});
+</script>
+
   `;
 
   // 🔹 Initialize the custom player logic AFTER injecting HTML
