@@ -11,7 +11,7 @@ import cors from "cors";
 
 // Allow your Vercel frontend domain
 const allowedOrigins = [
-  "https://onestop-pi.vercel.app/",
+  "https://onestop-pi.vercel.app",
 ];
 
 app.use(
