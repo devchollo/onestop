@@ -7,7 +7,6 @@ import { v4 as uuidv4 } from "uuid";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
 import cors from "cors";
 
 // Allow your Vercel frontend domain
@@ -15,16 +14,17 @@ const allowedOrigins = [
   "https://onestop-kent-johndear-sevillejos-projects.vercel.app",
 ];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  }
-}));
-
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  })
+);
 
 // Multer stores files temporarily in /tmp
 const upload = multer({ dest: "/tmp" });
@@ -35,12 +35,18 @@ const progressMap = {};
 // --- Backblaze Helpers ---
 async function b2AuthorizeAccount() {
   const { B2_KEY_ID, B2_APP_KEY } = process.env;
-  if (!B2_KEY_ID || !B2_APP_KEY) throw new Error("B2_KEY_ID or B2_APP_KEY not set");
+  if (!B2_KEY_ID || !B2_APP_KEY)
+    throw new Error("B2_KEY_ID or B2_APP_KEY not set");
 
-  const credentials = Buffer.from(`${B2_KEY_ID}:${B2_APP_KEY}`).toString("base64");
-  const res = await fetch("https://api.backblazeb2.com/b2api/v2/b2_authorize_account", {
-    headers: { Authorization: `Basic ${credentials}` },
-  });
+  const credentials = Buffer.from(`${B2_KEY_ID}:${B2_APP_KEY}`).toString(
+    "base64"
+  );
+  const res = await fetch(
+    "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
+    {
+      headers: { Authorization: `Basic ${credentials}` },
+    }
+  );
   if (!res.ok) throw new Error("B2 authorize failed");
   return res.json();
 }
@@ -64,7 +70,9 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
   const { B2_BUCKET_ID, B2_BUCKET_NAME } = process.env;
   if (!B2_BUCKET_ID || !B2_BUCKET_NAME) {
-    return res.status(500).json({ error: "B2_BUCKET_ID or B2_BUCKET_NAME not set" });
+    return res
+      .status(500)
+      .json({ error: "B2_BUCKET_ID or B2_BUCKET_NAME not set" });
   }
 
   const uploadId = uuidv4();
@@ -72,18 +80,16 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
   try {
     // Authorize B2
-    const { apiUrl, authorizationToken, downloadUrl } = await b2AuthorizeAccount();
+    const { apiUrl, authorizationToken, downloadUrl } =
+      await b2AuthorizeAccount();
 
     // Get upload URL
-    const { uploadUrl, authorizationToken: uploadAuthToken } = await b2GetUploadUrl(
-      apiUrl,
-      authorizationToken,
-      B2_BUCKET_ID
-    );
+    const { uploadUrl, authorizationToken: uploadAuthToken } =
+      await b2GetUploadUrl(apiUrl, authorizationToken, B2_BUCKET_ID);
 
     // Stream file to Backblaze with progress tracking
     const filePath = req.file.path;
-    const fileSize = fs.statSync(filePath).size;
+
     let uploaded = 0;
 
     const fileStream = fs.createReadStream(filePath);
@@ -91,39 +97,42 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       uploaded += chunk.length;
       progressMap[uploadId] = uploaded / fileSize;
     });
+    const fileSize = fs.statSync(filePath).size;
+    const fileBuffer = fs.readFileSync(filePath);
+    const uploadRes = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        Authorization: uploadAuthToken,
+        "X-Bz-File-Name": encodeURIComponent(req.file.originalname),
+        "Content-Type": req.file.mimetype || "b2/x-auto",
+        "X-Bz-Content-Sha1": "do_not_verify",
+        "Content-Length": fileSize,
+      },
+      body: fileBuffer,
+    });
 
-   const uploadRes = await fetch(uploadUrl, {
-  method: "POST",
-  headers: {
-    Authorization: uploadAuthToken,
-    "X-Bz-File-Name": encodeURIComponent(req.file.originalname),
-    "Content-Type": req.file.mimetype || "b2/x-auto",
-    "X-Bz-Content-Sha1": "do_not_verify",
-  },
-  body: fileStream,
-});
+    let uploadResult;
+    try {
+      uploadResult = await uploadRes.json();
+    } catch (parseErr) {
+      console.error("Failed to parse Backblaze response:", parseErr);
+      return res.status(500).json({ error: "Invalid response from B2" });
+    }
 
-let uploadResult;
-try {
-  uploadResult = await uploadRes.json();
-} catch (parseErr) {
-  console.error("Failed to parse Backblaze response:", parseErr);
-  return res.status(500).json({ error: "Invalid response from B2" });
-}
-
-if (!uploadRes.ok) {
-  console.error("B2 upload error:", uploadResult);
-  return res
-    .status(uploadRes.status)
-    .json({ error: "B2 file upload failed", details: uploadResult });
-}
-
+    if (!uploadRes.ok) {
+      console.error("B2 upload error:", uploadResult);
+      return res
+        .status(uploadRes.status)
+        .json({ error: "B2 file upload failed", details: uploadResult });
+    }
 
     // Clean up tmp file
     fs.unlinkSync(filePath);
 
     // Build public file URL
-    const fileUrl = `${downloadUrl}/file/${B2_BUCKET_NAME}/${encodeURIComponent(uploadResult.fileName)}`;
+    const fileUrl = `${downloadUrl}/file/${B2_BUCKET_NAME}/${encodeURIComponent(
+      uploadResult.fileName
+    )}`;
 
     // Mark progress as done
     progressMap[uploadId] = 1;
@@ -131,7 +140,9 @@ if (!uploadRes.ok) {
     return res.status(200).json({ success: true, uploadId, fileUrl });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message || "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ error: err.message || "Internal Server Error" });
   }
 });
 
