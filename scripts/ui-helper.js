@@ -11,7 +11,10 @@ async function handleFiles(files) {
   for (let file of files) {
     console.log("Selected file:", file.name, file.size);
 
-    qs("#progressContainer").style.display = "block";
+    const progressContainer = qs("#progressContainer");
+    if (progressContainer) {
+      progressContainer.style.display = "block";
+    }
 
     try {
       // Upload to Render with browser progress tracking
@@ -19,8 +22,13 @@ async function handleFiles(files) {
         file,
         (browserProgress) => {
           const percent = Math.round(browserProgress * 100);
-          qs("#browserProgress").value = percent;
-          qs("#browserProgressText").textContent = `${percent}%`;
+
+          const browserProgressEl = qs("#browserProgress");
+          const browserProgressText = qs("#browserProgressText");
+
+          if (browserProgressEl) browserProgressEl.value = percent;
+          if (browserProgressText)
+            browserProgressText.textContent = `${percent}%`;
         }
       );
 
@@ -34,8 +42,13 @@ async function handleFiles(files) {
 
           if (data.progress !== undefined) {
             const percent = Math.round(data.progress * 100);
-            qs("#serverProgress").value = percent;
-            qs("#serverProgressText").textContent = `${percent}%`;
+
+            const serverProgressEl = qs("#serverProgress");
+            const serverProgressText = qs("#serverProgressText");
+
+            if (serverProgressEl) serverProgressEl.value = percent;
+            if (serverProgressText)
+              serverProgressText.textContent = `${percent}%`;
 
             if (percent >= 100) {
               clearInterval(poll);
@@ -113,14 +126,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (dz) {
-    ;["dragenter", "dragover"].forEach((evt) =>
+    ["dragenter", "dragover"].forEach((evt) =>
       dz.addEventListener(evt, (e) => {
         e.preventDefault();
         e.stopPropagation();
         dz.classList.add("dragging");
       })
     );
-    ;["dragleave", "drop"].forEach((evt) =>
+    ["dragleave", "drop"].forEach((evt) =>
       dz.addEventListener(evt, (e) => {
         e.preventDefault();
         e.stopPropagation();

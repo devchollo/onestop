@@ -243,101 +243,116 @@
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <header>
-        <div class="brand">
-          <div class="logo"></div>
-          <div>
-            <h1>One Stop</h1>
-            <div class="muted">Upload MP3 → get link → embed anywhere</div>
-          </div>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>One Stop</h1>
+          <div class="muted">Upload MP3 → get link → embed anywhere</div>
         </div>
-        <div class="controls">
-          <button class="btn" id="themeToggle">🌓 Theme</button>
-          <button class="btn" id="infoButton">ℹ️ Info</button>
+      </div>
+      <div class="controls">
+        <button class="btn" id="themeToggle">🌓 Theme</button>
+        <button class="btn" id="infoButton">ℹ️ Info</button>
+      </div>
+    </header>
+
+    <main class="grid" aria-live="polite">
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Upload MP3</div>
         </div>
-      </header>
-
-      <main class="grid" aria-live="polite">
-        <section class="panel">
-          <div class="panel-head">
-            <div class="panel-title">Upload MP3</div>
+        <div class="dropzone" id="dropzone">
+          <div class="dz-icon">🎵</div>
+          <div><strong>Drag & drop</strong> MP3 files or <u>click to choose</u>.</div>
+          <div class="note" style="margin-top: 6px">
+            Max 100 MB • Paste with <span class="kbd">Ctrl/⌘+V</span>
           </div>
-          <div class="dropzone" id="dropzone">
-            <div class="dz-icon">🎵</div>
-            <div><strong>Drag & drop</strong> MP3 files or <u>click to choose</u>.</div>
-            <div class="note" style="margin-top: 6px">
-              Max 4.5 MB • Paste with <span class="kbd">Ctrl/⌘+V</span>
-            </div>
-            <input type="file" id="fileInput" accept="audio/mpeg" multiple />
-          </div>
-          <div class="rows" id="rows"></div>
-        </section>
+          <input type="file" id="fileInput" accept="audio/mpeg" multiple />
+        </div>
 
-        <aside class="side">
-          <div class="panel" style="padding: 16px">
-            <h3 style="margin: 6px 6px 12px">Embed Preview</h3>
-            <div
-              class="code"
-              id="embedCode"
-              role="region"
-              aria-label="Generated embed code"
-              tabindex="0"
-            >
-              Select or upload a file to see its embed code.
-            </div>
-            <div style="display: flex; gap: 8px; margin-top: 10px">
-              <button class="btn" id="copyCode">Copy Code</button>
-              <button class="btn" id="openLink" disabled>Open Link</button>
-            </div>
-            <p class="note" style="margin-top: 12px">
-              The code uses a direct MP3 URL. Paste it into SitePlus (HTML
-              block) or any site builder that accepts custom HTML.
+        <!-- Progress UI -->
+        <div id="progressContainer" style="display:none; margin-top: 12px;">
+          <label for="browserProgress" class="note">Browser upload progress</label>
+          <progress id="browserProgress" value="0" max="100" style="width:100%"></progress>
+          <div id="browserProgressText" class="note">0%</div>
+
+          <label for="serverProgress" class="note" style="margin-top:10px; display:block;">
+            Server processing progress
+          </label>
+          <progress id="serverProgress" value="0" max="100" style="width:100%"></progress>
+          <div id="serverProgressText" class="note">0%</div>
+        </div>
+
+        <div class="rows" id="rows"></div>
+      </section>
+
+      <aside class="side">
+        <div class="panel" style="padding: 16px">
+          <h3 style="margin: 6px 6px 12px">Embed Preview</h3>
+          <div
+            class="code"
+            id="embedCode"
+            role="region"
+            aria-label="Generated embed code"
+            tabindex="0"
+          >
+            Select or upload a file to see its embed code.
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px">
+            <button class="btn" id="copyCode">Copy Code</button>
+            <button class="btn" id="openLink" disabled>Open Link</button>
+          </div>
+          <p class="note" style="margin-top: 12px">
+            The code uses a direct MP3 URL. Paste it into SitePlus (HTML
+            block) or any site builder that accepts custom HTML.
+          </p>
+        </div>
+
+        <!-- Pulse player section  -->
+        <div class="panel" style="padding: 16px; margin-top: 18px;">
+          <h3 style="margin: 6px 6px 12px">Pulse Player</h3>
+          <div
+            id="pulsePlayerContainer"
+            role="region"
+            aria-label="Pulse MP3 player"
+          >
+            <p class="note">
+              This player has been styled exactly as what you see. Copy Code
+              and simple paste it anywhere.
             </p>
           </div>
-
-          <!-- Pulse player section  -->
-          <div class="panel" style="padding: 16px; margin-top: 18px;">
-            <h3 style="margin: 6px 6px 12px">Pulse Player</h3>
-            <div
-              id="pulsePlayerContainer"
-              role="region"
-              aria-label="Pulse MP3 player"
-            >
-              <p class="note">
-                This player has been styled exactly as what you see. Copy Code
-                and simple paste it anywhere.
-              </p>
-            </div>
-            <div style="display: flex; gap: 8px; margin-top: 10px">
-              <button class="btn" id="copyPulseCode">Copy Code</button>
-            </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px">
+            <button class="btn" id="copyPulseCode">Copy Code</button>
           </div>
-          <!-- Pulse player section  -->
+        </div>
+        <!-- Pulse player section  -->
 
-          <div class="panel" style="padding: 16px; margin-top: 18px">
-            <h3 style="margin: 6px">Tips</h3>
-            <ul class="note" style="margin: 6px 0 0 16px; padding: 0 0 6px 0">
-              <li>Keep filenames simple (a-z, 0-9, dashes).</li>
-              <li>
-                Normalize audio levels before upload for consistent volume.
-              </li>
-              <li>
-                Use the same host for all embeds to avoid mixed content warnings
-                (HTTP vs HTTPS).
-              </li>
-            </ul>
-          </div>
-        </aside>
-      </main>
-    </div>
+        <div class="panel" style="padding: 16px; margin-top: 18px">
+          <h3 style="margin: 6px">Tips</h3>
+          <ul class="note" style="margin: 6px 0 0 16px; padding: 0 0 6px 0">
+            <li>Keep filenames simple (a-z, 0-9, dashes).</li>
+            <li>
+              Normalize audio levels before upload for consistent volume.
+            </li>
+            <li>
+              Use the same host for all embeds to avoid mixed content warnings
+              (HTTP vs HTTPS).
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+  </div>
 
-    <div class="toast" id="toast"></div>
+  <div class="toast" id="toast"></div>
 
-    <!-- Info dialog same as before -->
-    <dialog id="infoDialog"></dialog>
+  <!-- Info dialog same as before -->
+  <dialog id="infoDialog">Fuck</dialog>
 
-    <!-- hook up new ui-helper -->
-    <script src="scripts/ui-helper.js" defer></script>
-  </body>
+  <!-- hook up new ui-helper -->
+  <script src="scripts/ui-helper.js" defer></script>
+</body>
+
 </html>
