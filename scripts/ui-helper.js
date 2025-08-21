@@ -389,9 +389,14 @@ async function handleFiles(files) {
 }
 
 // --- Event bindings ---
-const dz = qs("#dropzone");
-const input = qs("#fileInput");
-input.addEventListener("change", (e) => handleFiles(e.target.files));
+document.addEventListener("DOMContentLoaded", () => {
+  const dz = qs("#dropzone");
+  const input = qs("#fileInput");
+  
+  if (input) {
+    input.addEventListener("change", (e) => handleFiles(e.target.files));
+  }
+});
 
 ["dragenter", "dragover"].forEach((ev) =>
   dz.addEventListener(ev, (e) => {
