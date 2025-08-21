@@ -1,36 +1,19 @@
-// server.js
 import express from "express";
 import multer from "multer";
-import fs from "fs";
 import fetch from "node-fetch";
+import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 
 const app = express();
-const upload = multer({ dest: "/tmp/" });
+const PORT = process.env.PORT || 3000;
 
-// In-memory progress store (id -> %)
-const progressMap = new Map();
+// Multer stores files temporarily in /tmp
+const upload = multer({ dest: "/tmp" });
 
-// --- SSE route for progress updates ---
-app.get("/progress/:id", (req, res) => {
-  const { id } = req.params;
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    Connection: "keep-alive",
-  });
+// In-memory map to store progress
+const progressMap = {};
 
-  const interval = setInterval(() => {
-    const percent = progressMap.get(id) || 0;
-    res.write(`data: ${percent}\n\n`);
-    if (percent >= 100) {
-      clearInterval(interval);
-      res.end();
-    }
-  }, 1000);
-});
-
-// --- Backblaze helpers ---
+// --- Backblaze Helpers ---
 async function b2AuthorizeAccount() {
   const { B2_KEY_ID, B2_APP_KEY } = process.env;
   if (!B2_KEY_ID || !B2_APP_KEY) throw new Error("B2_KEY_ID or B2_APP_KEY not set");
@@ -46,46 +29,50 @@ async function b2AuthorizeAccount() {
 async function b2GetUploadUrl(apiUrl, authorizationToken, bucketId) {
   const res = await fetch(`${apiUrl}/b2api/v2/b2_get_upload_url`, {
     method: "POST",
-    headers: { Authorization: authorizationToken, "Content-Type": "application/json" },
+    headers: {
+      Authorization: authorizationToken,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ bucketId }),
   });
   if (!res.ok) throw new Error("B2 get upload URL failed");
   return res.json();
 }
 
-// --- Upload route ---
+// --- Upload Route ---
 app.post("/upload", upload.single("file"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+  const { B2_BUCKET_ID, B2_BUCKET_NAME } = process.env;
+  if (!B2_BUCKET_ID || !B2_BUCKET_NAME) {
+    return res.status(500).json({ error: "B2_BUCKET_ID or B2_BUCKET_NAME not set" });
+  }
+
+  const uploadId = uuidv4();
+  progressMap[uploadId] = 0;
+
   try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
-    const { B2_BUCKET_ID, B2_BUCKET_NAME } = process.env;
-    if (!B2_BUCKET_ID || !B2_BUCKET_NAME) {
-      return res.status(500).json({ error: "B2_BUCKET_ID or B2_BUCKET_NAME not set" });
-    }
-
-    const uploadId = uuidv4(); // unique id per upload
-    progressMap.set(uploadId, 0);
-
-    // authorize + get upload URL
+    // Authorize B2
     const { apiUrl, authorizationToken, downloadUrl } = await b2AuthorizeAccount();
+
+    // Get upload URL
     const { uploadUrl, authorizationToken: uploadAuthToken } = await b2GetUploadUrl(
       apiUrl,
       authorizationToken,
       B2_BUCKET_ID
     );
 
-    // Track stream progress
-    const totalSize = req.file.size;
+    // Stream file to Backblaze with progress tracking
+    const filePath = req.file.path;
+    const fileSize = fs.statSync(filePath).size;
     let uploaded = 0;
 
-    const fileStream = fs.createReadStream(req.file.path);
+    const fileStream = fs.createReadStream(filePath);
     fileStream.on("data", (chunk) => {
       uploaded += chunk.length;
-      const percent = Math.min(100, Math.floor((uploaded / totalSize) * 100));
-      progressMap.set(uploadId, percent);
+      progressMap[uploadId] = uploaded / fileSize;
     });
 
-    // Pipe file stream directly to Backblaze
     const uploadRes = await fetch(uploadUrl, {
       method: "POST",
       headers: {
@@ -97,25 +84,41 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       body: fileStream,
     });
 
-    if (!uploadRes.ok) {
-      throw new Error(`B2 upload failed: ${uploadRes.status} ${await uploadRes.text()}`);
-    }
-
+    if (!uploadRes.ok) throw new Error("B2 file upload failed");
     const uploadResult = await uploadRes.json();
 
-    fs.unlink(req.file.path, () => {});
-    progressMap.set(uploadId, 100); // mark complete
+    // Clean up tmp file
+    fs.unlinkSync(filePath);
 
-    const fileUrl = `${downloadUrl}/file/${B2_BUCKET_NAME}/${encodeURIComponent(
-      uploadResult.fileName
-    )}`;
+    // Build public file URL
+    const fileUrl = `${downloadUrl}/file/${B2_BUCKET_NAME}/${encodeURIComponent(uploadResult.fileName)}`;
 
-    res.json({ success: true, uploadId, fileUrl });
+    // Mark progress as done
+    progressMap[uploadId] = 1;
+
+    return res.status(200).json({ success: true, uploadId, fileUrl });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message || "Internal Server Error" });
+    return res.status(500).json({ error: err.message || "Internal Server Error" });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on port " + PORT));
+// --- Progress Route ---
+app.get("/progress/:id", (req, res) => {
+  const { id } = req.params;
+  const progress = progressMap[id];
+  if (progress === undefined) {
+    return res.status(404).json({ error: "Invalid uploadId" });
+  }
+  res.json({ progress });
+});
+
+// --- Health Route (optional) ---
+app.get("/", (req, res) => {
+  res.send("✅ Upload service running.");
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
