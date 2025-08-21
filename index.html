@@ -354,7 +354,6 @@
             />
           </div>
           <div class="rows" id="rows" aria-label="Upload list">
-            <!-- dynamic rows go here -->
             <div id="linkOutput"></div>
           </div>
         </section>
@@ -471,58 +470,74 @@
     </dialog>
 
     <script defer>
-      const MAX_SIZE = 4.5 * 1024 * 1024; // 4.5 MB
+  async function uploadToServer(file, onProgress) {
+    if (!file) throw new Error("No file provided");
 
-      async function uploadToServer(file, onProgress) {
-        if (!file) throw new Error("No file provided");
-        if (file.size > MAX_SIZE)
-          throw new Error(`File exceeds max size of ${MAX_SIZE} bytes`);
+    const formData = new FormData();
+    formData.append("file", file);
 
-        const formData = new FormData();
-        formData.append("file", file);
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "https://your-render-service.onrender.com/upload", true);
 
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", "/api/upload-file", true);
+      // Client → Render progress
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && typeof onProgress === "function") {
+          const percent = (event.loaded / event.total) * 50; // cap at 50%
+          onProgress(percent);
+        }
+      };
 
-          // Progress event handler for upload
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable && typeof onProgress === "function") {
-              onProgress(event.loaded / event.total); // fraction from 0 to 1
-            }
-          };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            if (response.success) {
+              const { uploadId, fileUrl } = response;
 
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                  resolve({ url: response.fileUrl });
-                } else {
-                  reject(
-                    new Error(
-                      "Upload failed: " + (response.error || "unknown error")
-                    )
-                  );
+              // Now track Render → Backblaze progress via SSE
+              const evtSource = new EventSource(
+                `https://your-render-service.onrender.com/progress/${uploadId}`
+              );
+
+              evtSource.onmessage = (e) => {
+                const serverPercent = parseInt(e.data, 10);
+                if (typeof onProgress === "function") {
+                  // Scale server percent into 50–100%
+                  const totalPercent = 50 + serverPercent / 2;
+                  onProgress(totalPercent);
                 }
-              } catch (parseError) {
-                reject(new Error("Invalid JSON response from server"));
-              }
+
+                if (serverPercent >= 100) {
+                  evtSource.close();
+                  resolve({ url: fileUrl });
+                }
+              };
             } else {
               reject(
-                new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`)
+                new Error(
+                  "Upload failed: " + (response.error || "unknown error")
+                )
               );
             }
-          };
+          } catch (parseError) {
+            reject(new Error("Invalid JSON response from server"));
+          }
+        } else {
+          reject(
+            new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`)
+          );
+        }
+      };
 
-          xhr.onerror = () =>
-            reject(new Error("Upload failed (network error)"));
+      xhr.onerror = () => reject(new Error("Upload failed (network error)"));
 
-          // Send the form data containing the file
-          xhr.send(formData);
-        });
-      }
-    </script>
+      // Send the form data containing the file
+      xhr.send(formData);
+    });
+  }
+</script>
+
     <script src="scripts/ui-helper.js"></script>
 
 

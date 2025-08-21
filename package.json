@@ -1,26 +1,23 @@
 {
-  "name": "onestop",
+  "name": "onestop-uploader",
   "version": "1.0.0",
-  "description": "> **Your team's quick & easy MP3 hosting hub** – Upload audio files, get instant shareable links & HTML embed codes for client websites that don't support native audio hosting (like SitePlus).",
-  "main": "index.js",
+  "description": "File upload microservice for Backblaze B2, hosted on Render.",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/devchollo/onestop.git"
   },
-  "keywords": [],
+  "keywords": ["backblaze", "uploader", "render", "multer", "express"],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/devchollo/onestop/issues"
-  },
-  "homepage": "https://github.com/devchollo/onestop#readme",
   "dependencies": {
-    "formidable": "^3.5.4",
-    "multer": "^2.0.2",
-    "next-connect": "^1.0.0",
-    "node-fetch": "^2.7.0"
-  }
+  "express": "^4.19.2",
+  "multer": "1.4.5-lts.1",
+  "node-fetch": "^2.7.0",
+  "uuid": "^9.0.1"
+}
+
 }
