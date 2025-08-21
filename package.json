@@ -10,14 +10,20 @@
     "type": "git",
     "url": "git+https://github.com/devchollo/onestop.git"
   },
-  "keywords": ["backblaze", "uploader", "render", "multer", "express"],
+  "keywords": [
+    "backblaze",
+    "uploader",
+    "render",
+    "multer",
+    "express"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-  "express": "^4.19.2",
-  "multer": "1.4.5-lts.1",
-  "node-fetch": "^2.7.0",
-  "uuid": "^9.0.1"
-}
-
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "multer": "1.4.5-lts.1",
+    "node-fetch": "^2.7.0",
+    "uuid": "^9.0.1"
+  }
 }

@@ -390,13 +390,25 @@ async function handleFiles(files) {
 
 // --- Event bindings ---
 document.addEventListener("DOMContentLoaded", () => {
-  const dz = qs("#dropzone");
-  const input = qs("#fileInput");
-  
+  const dz = document.querySelector("#dropzone");
+  const input = document.querySelector("#fileInput");
+
   if (input) {
     input.addEventListener("change", (e) => handleFiles(e.target.files));
   }
+
+  if (dz) {
+    ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+      dz.addEventListener(eventName, (e) => e.preventDefault(), false);
+    });
+
+    dz.addEventListener("drop", (e) => {
+      e.preventDefault();
+      handleFiles(e.dataTransfer.files);
+    });
+  }
 });
+
 
 ["dragenter", "dragover"].forEach((ev) =>
   dz.addEventListener(ev, (e) => {
