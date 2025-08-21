@@ -92,19 +92,32 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       progressMap[uploadId] = uploaded / fileSize;
     });
 
-    const uploadRes = await fetch(uploadUrl, {
-      method: "POST",
-      headers: {
-        Authorization: uploadAuthToken,
-        "X-Bz-File-Name": encodeURIComponent(req.file.originalname),
-        "Content-Type": req.file.mimetype || "b2/x-auto",
-        "X-Bz-Content-Sha1": "do_not_verify",
-      },
-      body: fileStream,
-    });
+   const uploadRes = await fetch(uploadUrl, {
+  method: "POST",
+  headers: {
+    Authorization: uploadAuthToken,
+    "X-Bz-File-Name": encodeURIComponent(req.file.originalname),
+    "Content-Type": req.file.mimetype || "b2/x-auto",
+    "X-Bz-Content-Sha1": "do_not_verify",
+  },
+  body: fileStream,
+});
 
-    if (!uploadRes.ok) throw new Error("B2 file upload failed");
-    const uploadResult = await uploadRes.json();
+let uploadResult;
+try {
+  uploadResult = await uploadRes.json();
+} catch (parseErr) {
+  console.error("Failed to parse Backblaze response:", parseErr);
+  return res.status(500).json({ error: "Invalid response from B2" });
+}
+
+if (!uploadRes.ok) {
+  console.error("B2 upload error:", uploadResult);
+  return res
+    .status(uploadRes.status)
+    .json({ error: "B2 file upload failed", details: uploadResult });
+}
+
 
     // Clean up tmp file
     fs.unlinkSync(filePath);
